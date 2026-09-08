@@ -16,6 +16,7 @@ from memory.diff import compare_assessments
 from migration.pack import generate_pack
 from packages.shared.canonical import ProcessModel
 from llm.provider import get_llm_provider
+from scoring.dimensions import build_execution_surface_profile_view
 
 router = APIRouter(prefix="/automations", tags=["automations"])
 
@@ -68,6 +69,20 @@ def get_flow(automation_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "No process version uploaded yet")
     pm = ProcessModel.model_validate(version.process_model)
     return build_flow_graph(pm)
+
+
+@router.get("/{automation_id}/execution-surface-profile")
+def get_execution_surface_profile(automation_id: int, db: Session = Depends(get_db)):
+    """Richer per-surface breakdown (API/reusable-subprocess/queue coverage
+    plus UI dependency) instead of the single execution_tool_readiness
+    ratio — see docs/DUCK_HANDOFF.md Estate Phase 5."""
+    automation = _get_automation(db, automation_id)
+    version = _latest_version(automation)
+    if not version:
+        raise HTTPException(404, "No process version uploaded yet")
+    pm = ProcessModel.model_validate(version.process_model)
+    profile = build_execution_surface_profile_view(pm)
+    return profile.model_dump(mode="json")
 
 
 @router.get("/{automation_id}/assessments")

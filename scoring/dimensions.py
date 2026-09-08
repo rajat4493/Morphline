@@ -627,6 +627,69 @@ class ExecutionSurfaceProfile:
         return len(self.api_steps) >= len(self.stable_ui_steps)
 
 
+def _coverage_level(count: int, total: int) -> Level:
+    """LOW/MEDIUM/HIGH coverage instead of collapsing tool readiness into
+    one ratio (estate brief: distinguish NO BOUNDED TOOL / PARTIAL / STRONG
+    per surface, not just an overall score)."""
+    if total == 0 or count == 0:
+        return Level.LOW
+    ratio = count / total
+    if ratio >= 0.6:
+        return Level.HIGH
+    if ratio >= 0.25:
+        return Level.MEDIUM
+    return Level.LOW
+
+
+def build_execution_surface_profile_view(pm: ProcessModel):
+    """Builds the estate-facing `ExecutionSurfaceProfileView` from the same
+    `ExecutionSurfaceProfile` breakdown `score_execution_tool_readiness`
+    uses, so the per-dimension score and this richer view can never
+    disagree about what counts as an API, a bounded subprocess, or a
+    brittle UI step."""
+    from packages.shared.estate_types import ExecutionSurfaceProfileView
+
+    profile = ExecutionSurfaceProfile(pm)
+    total_steps = len(pm.all_steps()) or 1
+
+    api_count = len(profile.api_steps)
+    db_queue_count = len(profile.db_queue_steps)
+    stable_ui_count = len(profile.stable_ui_steps)
+    brittle_ui_count = len(profile.brittle_ui_steps)
+
+    stable_total = api_count + db_queue_count + stable_ui_count
+    surface_total = stable_total + brittle_ui_count
+
+    api_coverage = _coverage_level(api_count, total_steps)
+    reusable_subprocess_coverage = Level.HIGH if len(profile.bounded_subprocess_files) >= 2 else (
+        Level.MEDIUM if profile.bounded_subprocess_files else Level.LOW
+    )
+    queue_tool_coverage = _coverage_level(db_queue_count, total_steps)
+    ui_dependency = _coverage_level(brittle_ui_count, surface_total or 1)
+
+    if surface_total == 0:
+        overall_readiness = Level.LOW
+        confidence = Level.LOW
+    else:
+        stable_ratio = stable_total / surface_total
+        overall_readiness = Level.HIGH if stable_ratio >= 0.6 else (Level.MEDIUM if stable_ratio >= 0.3 else Level.LOW)
+        confidence = Level.HIGH if surface_total >= 5 else Level.MEDIUM
+
+    return ExecutionSurfaceProfileView(
+        api_coverage=api_coverage,
+        reusable_subprocess_coverage=reusable_subprocess_coverage,
+        queue_tool_coverage=queue_tool_coverage,
+        ui_dependency=ui_dependency,
+        overall_readiness=overall_readiness,
+        confidence=confidence,
+        api_step_count=api_count,
+        db_queue_step_count=db_queue_count,
+        stable_ui_step_count=stable_ui_count,
+        brittle_ui_step_count=brittle_ui_count,
+        bounded_subprocess_files=sorted(profile.bounded_subprocess_files),
+    )
+
+
 DIMENSION_SCORERS = {
     "current_ai_usage": score_current_ai_usage,
     "reasoning_opportunity": score_reasoning_opportunity,

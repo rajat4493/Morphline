@@ -234,6 +234,24 @@ def test_modernization_priorities_ranked_without_fabricated_monetary_value():
         assert p.priority.value in {"LOW", "MEDIUM", "HIGH", "UNKNOWN"}
 
 
+def test_execution_surface_profile_distinguishes_bounded_ui_from_brittle_ui():
+    """Section: 'do not collapse tool readiness into one ratio.' A process
+    whose UI automation is entirely encapsulated in bounded reusable
+    subprocesses must show LOW ui_dependency risk despite heavy UI use,
+    while a process with no encapsulation shows HIGH ui_dependency."""
+    from scoring.dimensions import build_execution_surface_profile_view
+
+    pm_bounded, _ = _assess("ui_heavy_reusable_tools")
+    pm_brittle, _ = _assess("invoice_processing")
+
+    bounded_profile = build_execution_surface_profile_view(pm_bounded)
+    brittle_profile = build_execution_surface_profile_view(pm_brittle)
+
+    assert bounded_profile.reusable_subprocess_coverage.value in {"MEDIUM", "HIGH"}
+    assert bounded_profile.bounded_subprocess_files
+    assert brittle_profile.ui_dependency.value == "HIGH"
+
+
 def test_normalization_folds_aliases_without_silent_ambiguous_merge():
     resolve, _reg = _make_resolver()
     dep1 = resolve(DependencyKind.SYSTEM, "SAP")
