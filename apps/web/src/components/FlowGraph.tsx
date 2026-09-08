@@ -42,7 +42,22 @@ function StepNode({ data }: { data: FlowGraphData["nodes"][number]["data"] }) {
   );
 }
 
-const nodeTypes = { processStep: StepNode };
+function InvokedWorkflowNode({ data }: { data: FlowGraphData["nodes"][number]["data"] }) {
+  return (
+    <div
+      className="rounded-md border-2 border-dashed bg-violet-50 px-3 py-2 shadow-sm min-w-[190px] max-w-[230px]"
+      style={{ borderColor: "#7c3aed" }}
+    >
+      <Handle type="target" position={Position.Top} className="!bg-violet-400" />
+      <div className="text-[10px] uppercase tracking-wide text-violet-500">Subprocess · {data.workflow}</div>
+      <div className="text-sm font-medium text-ink leading-tight mt-0.5">{data.label}</div>
+      <div className="text-[11px] text-violet-600 mt-0.5">invokes {data.invokedWorkflow}</div>
+      <Handle type="source" position={Position.Bottom} className="!bg-violet-400" />
+    </div>
+  );
+}
+
+const nodeTypes = { processStep: StepNode, invokedWorkflow: InvokedWorkflowNode };
 
 function layout(nodes: FlowGraphData["nodes"], edges: FlowGraphData["edges"]) {
   const g = new dagre.graphlib.Graph();
@@ -64,7 +79,7 @@ export function FlowGraph({ data, onSelectNode }: { data: FlowGraphData; onSelec
     const laidOut = layout(data.nodes, data.edges);
     const rfNodes: Node[] = laidOut.map((n) => ({
       id: n.id,
-      type: "processStep",
+      type: n.type === "invokedWorkflow" ? "invokedWorkflow" : "processStep",
       position: n.position,
       data: n.data,
     }));
