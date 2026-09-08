@@ -14,8 +14,8 @@ this file fully before reading anything else, including other docs.
 - Test baseline at start of this phase: **63 passed**, 0 failed
   (`pytest -q` from repo root).
 - This phase's target commit(s): estate intelligence phase (see "Current
-  task" below). Update this section again at the end with the new commit
-  hash and new test count.
+  task" below). **See "End-of-phase status" near the bottom of this file
+  for the final state — 79 passed, 0 failed.**
 
 ---
 
@@ -244,11 +244,13 @@ the numbered entries once written:)*
   **computed on demand from existing per-automation data**, not
   persisted as a duplicate universe (per the brief's own instruction not
   to build a "separate duplicate universe" and not to reach for a graph
-  database). The only *new persisted* tables are: `CanonicalSystemRow`
-  (+ its aliases) for the normalization dictionary (this must persist —
-  it's a growing piece of institutional knowledge and user-confirmable
-  state), and `EnvironmentEventRow` for the longitudinal "environment
-  changed on this date" memory the brief explicitly asks for.
+  database). The only *new persisted* tables are: `CanonicalDependencyRow`
+  (+ its aliases, covering both SYSTEM and COMPONENT kinds in one table
+  rather than separate `CanonicalSystem`/`CanonicalComponent` classes — an
+  intentional simplification since both need identical alias/confidence
+  machinery) for the normalization dictionary, and `EnvironmentEventRow`
+  for the longitudinal "environment changed on this date" memory the brief
+  explicitly asks for.
 - Simulation (`SimulationScenario`/`SimulationOverride`/`SimulationResult`)
   is entirely in-memory / request-response — never persisted — which is
   the simplest possible way to guarantee it can never corrupt real state.
@@ -339,9 +341,114 @@ assumed-working.
 *(Update the section below at the end of this phase with the final
 verified state before ending the session.)*
 
-## End-of-phase status (fill in when done)
+## End-of-phase status
 
-- Final commit hash:
-- Final test count:
-- Verification ledger status:
-- Summary of what shipped vs. what was deliberately deferred:
+- Final commit hash: see `git log` head on `claude/new-session-ekr17k` —
+  the commit adding this update is the last one of this phase.
+- Final test count: **79 passed**, 0 failed (`pytest -q` from repo root;
+  started this phase at 63). 16 new tests, 0 existing tests modified.
+- Verification ledger status: see `docs/verification-ledger.md`. Summary:
+  8 capabilities VERIFIED, 1 MANUAL-ONLY (environment memory has no
+  automated test yet), 1 PARTIAL (reusable-tool detection — the estate-level
+  "shared across N automations" fact is new and verified, the underlying
+  per-automation heuristic itself wasn't refined), 2 NOT BUILT (estate
+  frontend views, estate-level LLM tasks).
+- What shipped this phase:
+  - `estate/` package: `normalize.py`, `identity.py`, `graph.py`,
+    `simulation.py`, `unlock.py` — all pure functions, DB-free, matching the
+    existing `scoring/`/`recommendation/` style.
+  - `packages/shared/estate_types.py` — all new pydantic types (canonical
+    dependency, estate graph, shared constraint, unlock opportunity,
+    simulation scenario/result, modernization priority, environment event,
+    execution surface profile view).
+  - `apps/api/app/estate_service.py` + `apps/api/app/routers/estate.py` —
+    DB orchestration + full REST surface: estate graph (4 clustering
+    modes), shared constraints, unlock opportunities, modernization
+    priorities, what-if simulation (never persists), canonical-dependency
+    dictionary + alias confirmation, environment events.
+  - Two new persisted tables: `CanonicalDependencyRow`, `EnvironmentEventRow`.
+  - Execution Surface Profile wired into `scoring/dimensions.py` and
+    exposed via `GET /automations/{id}/execution-surface-profile`.
+  - Process flow graph readability fix (`apps/api/app/flowgraph.py`
+    `_WorkflowFlattener`): structural container noise is contracted out
+    while preserving real execution order; invoked workflows render as a
+    distinct `invokedWorkflow` node type (frontend: dashed violet block in
+    `FlowGraph.tsx`).
+  - `tests/test_estate.py` (13 tests covering Cases A, B, C, D, D2, E, F, G,
+    H, modernization ranking, normalization safety, execution surface
+    profile) and `tests/test_flow_readability.py` (4 tests).
+  - `docs/verification-ledger.md` (new).
+- What was deliberately deferred (see verification ledger #11-12 for why):
+  - **Estate-level frontend views** (Estate Overview, Automation Portfolio,
+    Systems & Dependencies, Constraints, Unlock Opportunities, What-If
+    Simulator, Evolution History) — the entire estate capability set is
+    currently API-only. This is the single biggest gap against the
+    phase-completion checklist. Reasoning for the trade-off: with limited
+    remaining time in this session, correctness + test coverage of the
+    actual estate *logic* (graph, simulation, unlock analysis — the parts
+    that are hard to get right and easy to get subtly wrong, e.g. the
+    simulation-isolation and partial-fix-doesn't-overstate-unlock
+    guarantees) was prioritized over frontend surface, which is more
+    mechanical to build once the API contract is stable and tested. The
+    API contract in `apps/api/app/routers/estate.py` is the exact shape a
+    frontend agent should build against next.
+  - **Estate-level LLM tasks** (cluster summaries, alias suggestions,
+    migration narratives, reassessment-change summaries) — `llm/provider.py`
+    was not touched this phase; only the pre-existing per-automation
+    `summarize_process` exists. No estate-level LLM entry point was added.
+  - **Automated test for `EnvironmentEventRow`** — verified manually via
+    curl only; no `apps/api/tests/` test posts an event and asserts the
+    affected-automations list or that no constraint status silently
+    changed as a side effect.
+  - `docs/UAT.md` was not extended with an estate section this phase.
+  - `docs/decisions.md` was not appended with numbered decision entries
+    for the architectural calls made this phase (compute-on-demand vs.
+    persisted, single `CanonicalDependency` type vs. separate
+    System/Component classes, React Flow reuse for clustering) — those
+    calls are recorded informally in "Open decisions" above but not yet
+    given numbered entries in the project's decision log.
+
+### Recommended next steps, in priority order
+
+1. Build the estate frontend (`apps/web/src/app/workspaces/[id]/estate/...`)
+   against the existing, tested API — start with Estate Overview + Unlock
+   Opportunities, since those directly answer the CIO/CoE questions the
+   brief cares most about.
+2. Add the missing `EnvironmentEventRow` automated test (see verification
+   ledger #6).
+3. Build fixtures with deliberately varied raw system names across
+   automations (e.g. "SAP" in one project, "SAP Production" in another) to
+   get an end-to-end (not just unit-level) proof of alias folding across a
+   real upload flow.
+4. Append `docs/decisions.md` entries for this phase's architectural calls.
+5. Only after the above: estate-level LLM summarization tasks — lowest
+   priority since the brief is explicit that deterministic evidence, not
+   LLM narrative, is what must carry the estate's core claims.
+
+### TheDuck learning added this phase
+
+- A what-if simulation is only trustworthy if it is physically incapable of
+  running a different code path than the real assessment. Building
+  `simulate_automation` to call the exact same `score_process`/`recommend`
+  functions (on a deep copy) rather than writing a parallel "simulated
+  scorer" is what makes "never overstate an unlock" a structural guarantee
+  instead of a hope — Case E (partial fix must not overstate) fell out of
+  this for free once the isolation was right, rather than needing its own
+  special-cased logic.
+- Pydantic v2 does not validate/coerce on plain `setattr()` — patching a
+  model field-by-field in a loop can silently leave a raw string where an
+  enum was expected, and the bug won't surface until something several
+  layers away does `.value` on it. Reconstruct via
+  `Model(**{**instance.model_dump(), **patch})` instead of setattr-looping
+  whenever "patching" a pydantic model from an untyped dict.
+- Cross-automation intelligence is cheap to compute-on-demand and expensive
+  to keep consistent if persisted redundantly — every estate capability
+  this phase (graph, shared constraints, unlock analysis) is a pure
+  function over existing per-automation snapshots precisely so there is
+  never a second copy of the truth to drift out of sync.
+- When a brief lists many capabilities under real time pressure, shipping
+  fewer capabilities *fully verified with tests on real fixtures* beats
+  shipping all of them as unverified scaffolding — a future agent can trust
+  a VERIFIED row in the ledger and build on it; it cannot trust an
+  unverified claim of completeness. Say what wasn't built, plainly, rather
+  than implying more coverage than exists.
