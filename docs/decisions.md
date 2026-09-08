@@ -6,6 +6,26 @@ first.
 
 ---
 
+### D-017 — Real-world XAML validation surfaced a parser bug; fixed via a general rule, not a special case
+Testing against a real, unmodified Studio-compiled export (see
+`docs/uipath-parser.md`) showed the parser walking WPF/XAML compilation
+metadata (`TextExpression.*`, `VisualBasic.Settings`, attached-property
+config elements) as if every element were a candidate workflow step — 652
+spurious warnings and step counts inflated 10-25x on one 4-workflow
+project. Rather than special-casing each metadata tag name individually,
+the fix is a general rule: any `Owner.Property`-style element whose owner
+isn't a recognized container (or a `.Body` wrapper, which legitimately
+holds nested activity content) is skipped as a whole subtree. This also
+required recognizing two real patterns the synthetic fixtures didn't
+exercise: `<x:Members>` argument declarations (vs. bare `<InArgument>`) and
+disabled `<ui:CommentOut>` blocks (which must be skipped entirely, not
+walked, so dead code never contributes to scoring). Locked in by
+`tests/test_real_world_xaml.py` against a sanitized copy of the real
+project (its one DPAPI-protected credential blob was redacted before the
+fixture was committed — SECURITY.md's own guidance, applied to ourselves).
+
+---
+
 ### D-016 — `Level` stays LOW/MEDIUM/HIGH; no fourth `UNKNOWN` value
 The business-context repair (Section 19) suggested a dial of
 LOW/MEDIUM/HIGH/UNKNOWN for primary display values. Rather than adding

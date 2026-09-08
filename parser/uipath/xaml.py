@@ -37,11 +37,33 @@ CONTAINER_TAGS = {
     "Sequence", "Flowchart", "StateMachine", "TryCatch", "If", "Switch",
     "ForEach", "ForEachRow", "While", "DoWhile", "Parallel", "ParallelForEach",
     "PickBranch", "Pick", "RetryScope", "State",
+    # UiPath "scope" activities: attach/open a target application and hold
+    "BrowserScope", "WindowScope", "AttachBrowser", "AttachWindow",
+    # nested activities in a `.Body` — structurally containers even though
+    # they aren't core Workflow Foundation control-flow tags.
+    "ExcelApplicationScope", "ExcelProcessScope", "UseApplicationBrowser",
 }
+
+# Transparent WF/XAML plumbing wrappers: never real activities, but their
+# children must still be walked (unlike pure metadata — see the generic
+# "." skip below). `Members` holds a compiled workflow's root argument
+# declarations; `ActivityAction`/`ActivityFunc` are the lambda-body wrapper
+# every `.Body`-holding scope activity compiles to.
+TRANSPARENT_WRAPPER_TAGS = {"Members", "ActivityAction", "ActivityFunc"}
+
+# Disabled/commented-out activities: present in the XAML for the developer's
+# reference but never executed. Counting their contents as real steps would
+# misrepresent the process (Rule 4 cuts both ways — don't invent activity
+# that doesn't run). The whole subtree is skipped, unlike a transparent
+# wrapper.
+DISABLED_TAGS = {"CommentOut"}
 
 UI_AUTOMATION_TAGS = {
     "Click", "TypeInto", "GetText", "SendHotkey", "SelectItem", "CheckBox",
     "Highlight", "ElementExists", "GetAttribute", "Hover", "SetText",
+    "OpenBrowser", "OpenApplication", "MaximizeWindow", "MinimizeWindow",
+    "CloseWindow", "CloseTab", "CloseApplication", "KeyboardShortcut",
+    "WaitElementVanish", "FindElement", "ScrollTo",
 }
 
 API_TAGS = {
@@ -62,8 +84,12 @@ HUMAN_TAGS = {
 RISK_TAGS = {"Throw", "Rethrow", "TerminateWorkflow"}
 
 QUEUE_TAGS = {"AddQueueItem", "GetQueueItems", "GetTransactionItem", "AddTransactionItem"}
-ASSET_TAGS = {"GetAsset", "SetAsset", "GetCredential"}
-EXCEL_TAGS = {"ExcelApplicationScope", "ReadRange", "WriteRange", "ReadCell", "WriteCell"}
+ASSET_TAGS = {"GetAsset", "SetAsset", "GetCredential", "GetPassword", "GetUserName", "GetRobotAsset"}
+EXCEL_TAGS = {
+    "ExcelApplicationScope", "ReadRange", "WriteRange", "ReadCell", "WriteCell",
+    "ExcelReadRange", "ExcelWriteRange", "ExcelReadCell", "ExcelWriteCell",
+    "AppendRange", "ExtractData", "FilterDataTable", "SortDataTable",
+}
 MAIL_TAGS = {"SendOutlookMailMessage", "SendMailMessage", "GetOutlookMailMessages", "GetIMAPMailMessages"}
 DB_TAGS = {"ExecuteQuery", "ExecuteNonQuery", "DatabaseConnect"}
 INVOKE_WORKFLOW_TAGS = {"InvokeWorkflowFile"}
@@ -163,9 +189,33 @@ def parse_xaml_file(path: Path) -> tuple[Workflow, list[str]]:
                 add_argument(name, direction, el.get("Type"))
             return None
 
-        # Property-element syntax like <TryCatch.Try>, <If.Then> — recurse
-        # into children without creating a Step for the wrapper itself.
-        if "." in tag and tag.split(".")[0] in CONTAINER_TAGS | {"If", "Switch"}:
+        if tag in DISABLED_TAGS:
+            # Disabled/commented-out activity: present in the file but never
+            # executed. Skip the whole subtree — do not recurse — so its
+            # contents never appear as steps or count toward any dimension.
+            return None
+
+        if tag in TRANSPARENT_WRAPPER_TAGS:
+            # Real Studio-compiled XAML declares the root workflow's
+            # arguments as <x:Members><x:Property .../></x:Members>, and
+            # every `.Body`-holding scope activity compiles its nested
+            # content through an <ActivityAction>/<ActivityFunc> lambda
+            # wrapper. Recurse so real children are still captured, without
+            # creating a spurious Step for the wrapper itself.
+            for child in el:
+                walk(child, parent_step)
+            return None
+
+        # Property-element syntax like <TryCatch.Try>, <If.Then>, and the
+        # <SomeActivity.Body> pattern real UiPath scope/container activities
+        # (OpenBrowser, ExcelApplicationScope, custom scopes, ...) use to
+        # hold their nested ActivityAction body — recurse into children
+        # without creating a Step for the wrapper itself, since real
+        # automation logic lives inside a `.Body`/`.Then`/`.Try` regardless
+        # of whether the owning activity is a core WF container we know by
+        # name (Rule 4 cuts both ways: don't invent steps, but don't
+        # silently drop real ones either).
+        if "." in tag and (tag.split(".")[0] in CONTAINER_TAGS | {"If", "Switch"} or tag.endswith(".Body")):
             child_ids: list[str] = []
             for child in el:
                 cid = walk(child, parent_step)
@@ -173,6 +223,19 @@ def parse_xaml_file(path: Path) -> tuple[Workflow, list[str]]:
                     child_ids.append(cid)
             if parent_step is not None:
                 parent_step.children.extend(child_ids)
+            return None
+
+        # Any other property-element / attached-property syntax (e.g.
+        # <TextExpression.NamespacesForImplementation>,
+        # <mva:VisualBasic.Settings>, <sap:VirtualizedContainerService.HintSize>,
+        # <ui:Click.Target>, <ui:CursorPosition.OffsetX>,
+        # <ActivityAction.Argument>) is WPF/XAML compilation metadata or
+        # activity *configuration* (selector targets, cursor offsets, view
+        # state) — never a nested workflow activity. Real Studio-compiled
+        # XAML is full of this. Skip the whole subtree rather than walking
+        # it as if its children were steps (Rule 4: don't misrepresent
+        # metadata as automation logic).
+        if "." in tag:
             return None
 
         if tag == "Activity":

@@ -33,9 +33,13 @@ _ROLLBACK_KEYWORDS = ("rollback", "compensat", "undo", "reverse")
 _MUTATING_METHODS = {"POST", "PUT", "DELETE", "PATCH"}
 _MUTATING_TAGS = {
     "WriteRange", "WriteCell", "AddQueueItem", "SendOutlookMailMessage",
-    "SendMailMessage", "ExecuteNonQuery",
+    "SendMailMessage", "ExecuteNonQuery", "ExcelWriteRange", "ExcelWriteCell",
+    "AppendRange",
 }
-_STRUCTURED_DATA_TAGS = {"ReadRange", "ReadCell", "ExecuteQuery", "HTTPRequest", "HttpClient", "RestRequest"}
+_STRUCTURED_DATA_TAGS = {
+    "ReadRange", "ReadCell", "ExecuteQuery", "HTTPRequest", "HttpClient", "RestRequest",
+    "ExcelReadRange", "ExcelReadCell",
+}
 _UNSTRUCTURED_DATA_TAGS = {"DataExtractionScope", "ClassifyDocument", "DocumentClassification", "ExtractEntities"}
 _UNSTRUCTURED_SOURCE_TAGS = _UNSTRUCTURED_DATA_TAGS | {"GetOutlookMailMessages", "GetIMAPMailMessages"}
 _DB_TAGS = {"ExecuteQuery", "ExecuteNonQuery", "DatabaseConnect"}

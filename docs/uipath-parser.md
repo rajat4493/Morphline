@@ -34,13 +34,40 @@ meaningful activities.
 ## Known limitations vs. real compiled UiPath XAML
 
 This is a from-scratch, dependency-free XAML walker, not the actual .NET
-Workflow Foundation XAML deserializer UiPath Studio uses. It works well
-against realistic, readably-authored XAML (including the synthetic fixtures
-in `fixtures/uipath/`), but real UiPath-exported XAML can include:
+Workflow Foundation XAML deserializer UiPath Studio uses. It has been
+validated against a real, unmodified Studio-compiled export (an invoice
+scraping bot, `fixtures/uipath/real_world_invoice_processing/`, sanitized
+to redact its one DPAPI-protected credential blob before being committed)
+in addition to the synthetic fixtures. Real UiPath-exported XAML can
+include:
 
-- Deeply nested generic type arguments and `sap:VirtualizedContainerService`
-  layout hints that this parser ignores (harmless — they don't affect
-  classification).
+- **Compilation metadata that isn't automation logic at all** —
+  `TextExpression.NamespacesForImplementation`/`.ReferencesForImplementation`
+  (VB import lists and assembly references), `VisualBasic.Settings`,
+  `sap:VirtualizedContainerService.HintSize`,
+  `sap2010:WorkflowViewState.IdRef`, activity-configuration property-elements
+  like `ui:Click.Target`/`ui:CursorPosition.OffsetX`. Handled: any
+  `Owner.Property`-style element whose owner isn't a recognized container or
+  `.Body` wrapper is skipped as a whole subtree (see `parser/uipath/xaml.py`,
+  the generic `"." in tag` skip). An earlier version of this parser walked
+  all of this as if it were candidate workflow steps — one real 4-workflow
+  project produced 652 spurious "unclassified activity" warnings and step
+  counts inflated by 10-25x before this fix (see
+  `tests/test_real_world_xaml.py`).
+- **Root-argument declarations via `<x:Members><x:Property .../></x:Members>`**
+  rather than bare `<InArgument>`/`<OutArgument>` elements — this is how
+  Studio actually compiles a workflow's arguments. Handled: `Members` is a
+  transparent wrapper (`TRANSPARENT_WRAPPER_TAGS`), its `Property` children
+  are captured as arguments same as before.
+- **Scope activities' real content nested inside a `.Body` property-element**
+  (e.g. `ui:OpenBrowser.Body`, `ui:BrowserScope.Body`), further wrapped in an
+  `ActivityAction`/`ActivityFunc` lambda element. Handled: any
+  `Owner.Body`-named element is unwrapped and recursed into like a core
+  container, and `ActivityAction`/`ActivityFunc` are transparent wrappers.
+- **Disabled/commented-out activities** (`ui:CommentOut`) — present in the
+  file for the developer's reference but never executed. Handled: the whole
+  subtree is skipped, not walked, so dead code never contributes to steps
+  or scoring (`DISABLED_TAGS`).
 - Custom/internal activity libraries with tag names not in the
   classification table — these correctly fall back to `UNKNOWN` rather than
   being misclassified, but a large custom-activity codebase will show up as
@@ -48,6 +75,10 @@ in `fixtures/uipath/`), but real UiPath-exported XAML can include:
 - Expression activities using VisualBasic.NET expression syntax embedded as
   attribute text — not evaluated or interpreted, only captured as raw
   attribute values.
+- Activity-name variants across UiPath package versions/editions (e.g.
+  classic `ReadRange`/`WriteRange` vs. modern `ExcelReadRange`/
+  `ExcelWriteRange`) — both are recognized, but a not-yet-seen variant will
+  fall back to `UNKNOWN` like any other unrecognized tag.
 
 Extending `CONTAINER_TAGS` / `UI_AUTOMATION_TAGS` / `API_TAGS` /
 `REASONING_TAGS` / `HUMAN_TAGS` / `RISK_TAGS` etc. in `xaml.py` is the
