@@ -1,0 +1,39 @@
+<Activity x:Class="Main"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:ui="clr-namespace:UiPath.UIAutomation.Activities;assembly=UiPath.UIAutomation.Activities"
+  xmlns:xl="clr-namespace:UiPath.Excel.Activities;assembly=UiPath.Excel.Activities"
+  xmlns:iocr="clr-namespace:UiPath.IntelligentOCR.Activities;assembly=UiPath.IntelligentOCR.Activities">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. -->
+  <Sequence DisplayName="Main Sequence">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="InvoiceFolderPath" />
+      <Variable x:TypeArguments="x:Object" Name="InvoiceTable" />
+    </Sequence.Variables>
+
+    <xl:ReadRange DisplayName="Read Invoice Batch" />
+
+    <ForEach DisplayName="For Each Invoice">
+      <InvokeWorkflowFile DisplayName="Invoke ExtractInvoiceData" WorkflowFileName="ExtractInvoiceData.xaml" />
+
+      <TryCatch DisplayName="SAP Update Try Catch">
+        <TryCatch.Try>
+          <Sequence DisplayName="Update SAP">
+            <ui:Click DisplayName="Click SAP Invoice Tab" Selector="&lt;wnd app='sap.exe' title='SAP Easy Access' /&gt;&lt;ctrl name='InvoiceTab' /&gt;" />
+            <ui:TypeInto DisplayName="Type Invoice Number" Selector="&lt;wnd app='sap.exe' /&gt;&lt;ctrl name='InvoiceNumberField' /&gt;" />
+            <ui:TypeInto DisplayName="Type Invoice Amount" Selector="&lt;wnd app='sap.exe' /&gt;&lt;ctrl name='AmountField' /&gt;" />
+            <ui:Click DisplayName="Click Post" Selector="&lt;wnd app='sap.exe' /&gt;&lt;ctrl name='PostButton' /&gt;" />
+            <LogMessage DisplayName="Log SAP Posting Success" />
+          </Sequence>
+        </TryCatch.Try>
+        <TryCatch.Catches>
+          <RetryScope DisplayName="Retry SAP Update">
+            <LogMessage DisplayName="Log SAP Retry" />
+          </RetryScope>
+        </TryCatch.Catches>
+      </TryCatch>
+    </ForEach>
+
+    <LogMessage DisplayName="Log Batch Complete" />
+  </Sequence>
+</Activity>

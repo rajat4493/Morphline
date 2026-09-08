@@ -1,0 +1,44 @@
+version: "3.9"
+
+# Personal V0 local development compose file. Postgres is included here so
+# the Postgres migration path (docs/decisions.md D-005) can be exercised
+# without code changes — just point DATABASE_URL at it. SQLite remains the
+# default for `apps/api` run directly (see README.md) since it needs no
+# services at all for a single developer.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: morphline
+      POSTGRES_PASSWORD: morphline
+      POSTGRES_DB: morphline
+    ports:
+      - "5432:5432"
+    volumes:
+      - morphline_pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://morphline:morphline@db:5432/morphline
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  web:
+    build:
+      context: apps/web
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  morphline_pgdata:

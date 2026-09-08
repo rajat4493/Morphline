@@ -1,0 +1,48 @@
+<Activity x:Class="Main"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:api="clr-namespace:UiPath.WebAPI.Activities;assembly=UiPath.WebAPI.Activities"
+  xmlns:tasks="clr-namespace:UiPath.Persistence.Activities;assembly=UiPath.Persistence.Activities">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. -->
+  <Sequence DisplayName="Main Sequence">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="CustomerId" />
+      <Variable x:TypeArguments="x:Boolean" Name="IsHighRisk" />
+    </Sequence.Variables>
+
+    <TryCatch DisplayName="Lookup Try Catch">
+      <TryCatch.Try>
+        <HTTPRequest DisplayName="Lookup Customer Record" Method="GET" EndPoint="https://crm.internal.example/api/customers" />
+      </TryCatch.Try>
+      <TryCatch.Catches>
+        <RetryScope DisplayName="Retry Customer Lookup">
+          <LogMessage DisplayName="Log Lookup Retry" />
+        </RetryScope>
+      </TryCatch.Catches>
+    </TryCatch>
+
+    <ClassifyDocument DisplayName="Classify Customer Exclusion Risk" />
+    <LogMessage DisplayName="Log Risk Classification" />
+
+    <If DisplayName="If High Risk">
+      <If.Then>
+        <Sequence DisplayName="Require Approval For Exclusion">
+          <GenerateText DisplayName="Draft Exclusion Justification For Approver" />
+          <CreateFormTask DisplayName="Create Exclusion Approval Task" />
+          <WaitForFormTask DisplayName="Wait For Compliance Approval" />
+
+          <TryCatch DisplayName="Update Exclusion Try Catch">
+            <TryCatch.Try>
+              <HTTPRequest DisplayName="Update Customer Exclusion Status" Method="POST" EndPoint="https://crm.internal.example/api/customers/exclusion" />
+            </TryCatch.Try>
+            <TryCatch.Catches>
+              <Rethrow DisplayName="Rethrow Exclusion Update Failure" />
+            </TryCatch.Catches>
+          </TryCatch>
+
+          <LogMessage DisplayName="Log Exclusion Status Updated" />
+        </Sequence>
+      </If.Then>
+    </If>
+  </Sequence>
+</Activity>

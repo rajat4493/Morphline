@@ -1,0 +1,9 @@
+{
+  "name": "Internal Report Generation (Synthetic Sample)",
+  "projectId": "sample-internal-report-0001",
+  "description": "SYNTHETIC TEST FIXTURE. Retrieves sales and inventory data via API and generates a summarized internal report. No customer-facing or mutating actions.",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.WebAPI.Activities": "1.18.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Customer Exclusion Review (Synthetic Sample)",
+  "projectId": "sample-customer-exclusion-0001",
+  "description": "SYNTHETIC TEST FIXTURE. Looks up a customer, classifies exclusion-list risk, requires human approval, then updates exclusion status via API.",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.WebAPI.Activities": "1.18.0",
+    "UiPath.Persistence.Activities": "1.9.0"
+  }
+}

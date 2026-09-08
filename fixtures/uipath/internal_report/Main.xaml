@@ -1,0 +1,32 @@
+<Activity x:Class="Main"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:api="clr-namespace:UiPath.WebAPI.Activities;assembly=UiPath.WebAPI.Activities"
+  xmlns:ai="clr-namespace:UiPath.MLServices.Activities;assembly=UiPath.MLServices.Activities">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. -->
+  <Sequence DisplayName="Main Sequence">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:Object" Name="SalesData" />
+      <Variable x:TypeArguments="x:Object" Name="InventoryData" />
+      <Variable x:TypeArguments="x:String" Name="ReportText" />
+    </Sequence.Variables>
+
+    <TryCatch DisplayName="Data Retrieval Try Catch">
+      <TryCatch.Try>
+        <Sequence DisplayName="Retrieve Source Data">
+          <HTTPRequest DisplayName="Get Weekly Sales Data" Method="GET" EndPoint="https://analytics.internal.example/api/sales/weekly" />
+          <HTTPRequest DisplayName="Get Inventory Levels" Method="GET" EndPoint="https://analytics.internal.example/api/inventory" />
+        </Sequence>
+      </TryCatch.Try>
+      <TryCatch.Catches>
+        <RetryScope DisplayName="Retry Data Retrieval">
+          <LogMessage DisplayName="Log Retrieval Retry" />
+        </RetryScope>
+      </TryCatch.Catches>
+    </TryCatch>
+
+    <SummarizeText DisplayName="Summarize Sales And Inventory Trends" />
+    <GenerateText DisplayName="Generate Executive Report Narrative" />
+    <LogMessage DisplayName="Log Report Generated" />
+  </Sequence>
+</Activity>

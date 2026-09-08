@@ -1,0 +1,11 @@
+{
+  "name": "Invoice Processing (Synthetic Sample)",
+  "projectId": "sample-invoice-processing-0001",
+  "description": "SYNTHETIC TEST FIXTURE. Reads invoices from Excel, extracts line-item data via OCR, and keys the result into SAP via UI automation.",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.Excel.Activities": "2.20.1",
+    "UiPath.UIAutomation.Activities": "23.10.2",
+    "UiPath.IntelligentOCR.Activities": "5.5.0"
+  }
+}

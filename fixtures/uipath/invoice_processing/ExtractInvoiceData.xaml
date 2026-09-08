@@ -1,0 +1,15 @@
+<Activity x:Class="ExtractInvoiceData"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:iocr="clr-namespace:UiPath.IntelligentOCR.Activities;assembly=UiPath.IntelligentOCR.Activities">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. -->
+  <Sequence DisplayName="Extract Invoice Data">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="ExtractedInvoiceNumber" />
+      <Variable x:TypeArguments="x:Double" Name="ExtractedAmount" />
+    </Sequence.Variables>
+
+    <DataExtractionScope DisplayName="Extract Invoice Line Items (OCR)" />
+    <LogMessage DisplayName="Log Extraction Result" />
+  </Sequence>
+</Activity>
