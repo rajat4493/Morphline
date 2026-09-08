@@ -40,7 +40,7 @@ _SYSTEM_HINTS: dict[str, tuple[str, str]] = {
 }
 
 
-def _guess_system_from_selector(raw_selector: str) -> str | None:
+def guess_system_from_selector(raw_selector: str) -> str | None:
     lowered = raw_selector.lower()
     for hint, (name, _mode) in _SYSTEM_HINTS.items():
         if hint in lowered:
@@ -121,7 +121,7 @@ def parse_project(root: Path, source_kind: str) -> ProcessModel:
 
         for step in workflow.steps:
             if step.selector:
-                sys_name = _guess_system_from_selector(step.selector.raw)
+                sys_name = guess_system_from_selector(step.selector.raw)
                 if sys_name:
                     sysobj = systems.setdefault(
                         sys_name,

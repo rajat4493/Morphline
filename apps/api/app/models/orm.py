@@ -42,6 +42,41 @@ class Automation(Base):
     business_context: Mapped["BusinessContextRow"] = relationship(back_populates="automation", uselist=False, cascade="all, delete-orphan")
 
 
+class CanonicalDependencyRow(Base):
+    """Workspace-scoped identity dictionary (Section: normalization layer).
+    'SAP', 'SAP GUI', 'SAP Production' fold into one row here so the estate
+    graph/shared-constraint/unlock logic reason about *real-world*
+    dependencies, not raw parser strings. See estate/normalize.py."""
+
+    __tablename__ = "canonical_dependencies"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id"))
+    kind: Mapped[str] = mapped_column(String(20))  # SYSTEM | COMPONENT
+    canonical_name: Mapped[str] = mapped_column(String(300))
+    normalized_key: Mapped[str] = mapped_column(String(300))
+    aliases: Mapped[list] = mapped_column(JSON, default=list)  # [{raw, confidence, user_confirmed}]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class EnvironmentEventRow(Base):
+    """Longitudinal institutional memory: 'SAP API became available in
+    2027-02'. Manually recorded by a human — never inferred, never
+    auto-applied to any automation's stored assessment (Section:
+    "Morphline should remember environmental changes... do NOT
+    automatically upgrade them")."""
+
+    __tablename__ = "environment_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id"))
+    canonical_dependency: Mapped[str] = mapped_column(String(300))
+    description: Mapped[str] = mapped_column(Text)
+    occurred_on: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    recorded_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
 class BusinessContextRow(Base):
     """One row per Automation (Section 4/5) — persists across re-uploads,
     since enterprise risk facts describe the *process*, not any one
