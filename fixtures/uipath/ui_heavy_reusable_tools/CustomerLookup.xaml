@@ -1,0 +1,16 @@
+<Activity x:Class="CustomerLookup"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:ui="clr-namespace:UiPath.UIAutomation.Activities;assembly=UiPath.UIAutomation.Activities">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. Bounded, reusable
+       subprocess with declared arguments — a valid deterministic tool even
+       though it uses UI automation internally. -->
+  <Sequence DisplayName="Customer Lookup">
+    <InArgument x:TypeArguments="x:String" Name="CustomerId" />
+    <OutArgument x:TypeArguments="x:String" Name="CustomerRecordSummary" />
+
+    <ui:Click DisplayName="Click CRM Search Field" Selector="&lt;wnd app='crm.exe' /&gt;&lt;ctrl name='SearchField' /&gt;" />
+    <ui:TypeInto DisplayName="Type Customer Id" Selector="&lt;wnd app='crm.exe' /&gt;&lt;ctrl name='SearchField' /&gt;" />
+    <ui:GetText DisplayName="Read Customer Record" Selector="&lt;wnd app='crm.exe' /&gt;&lt;ctrl name='RecordPanel' /&gt;" />
+  </Sequence>
+</Activity>

@@ -1,0 +1,15 @@
+<Activity x:Class="UpdateSAP"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:ui="clr-namespace:UiPath.UIAutomation.Activities;assembly=UiPath.UIAutomation.Activities">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. -->
+  <Sequence DisplayName="Update SAP Order">
+    <InArgument x:TypeArguments="x:String" Name="OrderId" />
+    <InArgument x:TypeArguments="x:String" Name="CustomerId" />
+    <OutArgument x:TypeArguments="x:Boolean" Name="UpdateSucceeded" />
+
+    <ui:Click DisplayName="Click SAP Order Tab" Selector="&lt;wnd app='sap.exe' /&gt;&lt;ctrl name='OrderTab' /&gt;" />
+    <ui:TypeInto DisplayName="Type Order Id" Selector="&lt;wnd app='sap.exe' /&gt;&lt;ctrl name='OrderIdField' /&gt;" />
+    <ui:Click DisplayName="Click Confirm Fulfillment" Selector="&lt;wnd app='sap.exe' /&gt;&lt;ctrl name='ConfirmButton' /&gt;" />
+  </Sequence>
+</Activity>

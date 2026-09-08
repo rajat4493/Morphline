@@ -26,6 +26,7 @@
     </TryCatch>
 
     <SummarizeText DisplayName="Summarize Sales And Inventory Trends" />
+    <ClassifyDocument DisplayName="Analyze Anomalies In Sales Data" />
     <GenerateText DisplayName="Generate Executive Report Narrative" />
     <LogMessage DisplayName="Log Report Generated" />
   </Sequence>

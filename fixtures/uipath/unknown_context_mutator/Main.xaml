@@ -1,0 +1,27 @@
+<Activity x:Class="Main"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:api="clr-namespace:UiPath.WebAPI.Activities;assembly=UiPath.WebAPI.Activities">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. -->
+  <Sequence DisplayName="Main Sequence">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="ItemId" />
+      <Variable x:TypeArguments="x:Int32" Name="NewQuantity" />
+    </Sequence.Variables>
+
+    <TryCatch DisplayName="Inventory Update Try Catch">
+      <TryCatch.Try>
+        <Sequence DisplayName="Update Inventory Record">
+          <HTTPRequest DisplayName="Get Current Inventory Record" Method="GET" EndPoint="https://inventory.internal.example/api/items" />
+          <HTTPRequest DisplayName="Update Inventory Quantity" Method="PUT" EndPoint="https://inventory.internal.example/api/items/quantity" />
+          <LogMessage DisplayName="Log Inventory Update" />
+        </Sequence>
+      </TryCatch.Try>
+      <TryCatch.Catches>
+        <RetryScope DisplayName="Retry Inventory Update">
+          <LogMessage DisplayName="Log Inventory Update Retry" />
+        </RetryScope>
+      </TryCatch.Catches>
+    </TryCatch>
+  </Sequence>
+</Activity>

@@ -21,15 +21,28 @@ See `docs/product-thesis.md` for the full rationale.
 - Reconstructs the process as a readable, color-coded, zoomable/pannable
   flow diagram (blue = deterministic, purple = reasoning/agent candidate,
   green = API/tool, orange = human approval, red = risk, grey = unresolved).
-- Scores the process across twelve evidence-driven dimensions (reasoning
-  need, tool readiness, blast radius, reversibility, compliance
-  sensitivity, and more — see `docs/scoring-model.md`), each with a score,
-  confidence, evidence list, and explanation. No black-box score.
-- Recommends the right target evolution state — and, just as importantly,
-  explains **why not further** (see `docs/recommendation-engine.md`).
+- Scores the process across thirteen evidence-driven dimensions (reasoning
+  opportunity, execution tool readiness, blast radius, reversibility,
+  compliance sensitivity, and more — see `docs/scoring-model.md`), each with
+  a score, confidence, and evidence grouped by type (technical / business /
+  runtime / inferred). No black-box score — and **existing AI activities in
+  the process are never used as evidence that the process needs to become
+  more agentic** (see "Current Implementation vs. Latent Opportunity" in
+  `docs/product-thesis.md`).
+- Lets you record **Business Context** per process — customer/financial/
+  legal impact, reversibility, approval requirements — the enterprise risk
+  facts that cannot be read out of a XAML file. Leaving these unanswered is
+  itself meaningful: it caps the maximum safe autonomy level rather than
+  being silently ignored (Section 13 of the product brief).
+- Recommends the right target evolution state **and** a Migration Pattern
+  (e.g. "Agent-Orchestrated RPA Tools," "Hybrid with Human Approval") — and,
+  just as importantly, explains **why not further**, classified as a
+  confirmed blocker, an unconfirmed unknown, a tooling gap, or simply "not
+  valuable yet" (see `docs/recommendation-engine.md`).
 - Remembers why a process was blocked from evolving, and tracks whether
-  that constraint is still true across re-assessments
-  (`docs/constraint-memory.md`).
+  that constraint is still true across re-assessments — including
+  reassessments triggered purely by a Business Context change, with no new
+  file upload (`docs/constraint-memory.md`).
 - Shows an evolution history timeline per process, and a diff ("what
   changed / what resolved / what new risk appeared") between assessments.
 - Shows a CIO-style estate dashboard across every uploaded process: an
@@ -144,11 +157,12 @@ must change before any enterprise/shared-network deployment.
 - `docs/product-thesis.md` — why this product exists and what it owns
 - `docs/architecture.md` — system architecture
 - `docs/canonical-model.md` — the platform-independent data model
-- `docs/scoring-model.md` — the twelve assessment dimensions
+- `docs/scoring-model.md` — the assessment dimensions, and current-usage vs. opportunity
 - `docs/recommendation-engine.md` — the evolution-state decision logic
 - `docs/constraint-memory.md` — how blockers are remembered and reconciled
 - `docs/uipath-parser.md` — how XAML parsing works and its limitations
 - `docs/uipath-orchestrator-future.md` — future read-only connector design
 - `docs/enterprise-deployment.md` — future SaaS / customer-collector shapes
 - `docs/decisions.md` — running log of engineering decisions
+- `docs/UAT.md` — plain-English manual test script (no code reading required)
 - `SECURITY.md` — security posture and what must change for production

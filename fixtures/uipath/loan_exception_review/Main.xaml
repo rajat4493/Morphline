@@ -1,0 +1,92 @@
+<Activity x:Class="Main"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:mail="clr-namespace:UiPath.Mail.Activities;assembly=UiPath.Mail.Activities"
+  xmlns:tasks="clr-namespace:UiPath.Persistence.Activities;assembly=UiPath.Persistence.Activities">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. Deliberately contains
+       ZERO AI/LLM activities — this fixture exists to prove that Reasoning
+       Opportunity must be assessed from the underlying process, not from
+       whether AI has been bolted on. -->
+  <Sequence DisplayName="Main Sequence">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="ExceptionNotes" />
+      <Variable x:TypeArguments="x:String" Name="RootCause" />
+    </Sequence.Variables>
+
+    <mail:GetIMAPMailMessages DisplayName="Read Loan Exception Inbox" />
+
+    <Switch DisplayName="Route By Exception Type">
+      <If DisplayName="Is Missing Documentation">
+        <If.Then>
+          <Sequence DisplayName="Investigate Missing Documentation">
+            <LogMessage DisplayName="Log Missing Doc Case" />
+          </Sequence>
+        </If.Then>
+      </If>
+      <If DisplayName="Is Income Discrepancy">
+        <If.Then>
+          <Sequence DisplayName="Investigate Income Discrepancy">
+            <LogMessage DisplayName="Log Income Discrepancy" />
+          </Sequence>
+        </If.Then>
+      </If>
+      <If DisplayName="Is Credit Score Borderline">
+        <If.Then>
+          <Sequence DisplayName="Evaluate Credit History">
+            <LogMessage DisplayName="Log Credit Review" />
+          </Sequence>
+        </If.Then>
+      </If>
+      <If DisplayName="Is Employment Unverified">
+        <If.Then>
+          <Sequence DisplayName="Determine Employment Status">
+            <LogMessage DisplayName="Log Employment Check" />
+          </Sequence>
+        </If.Then>
+      </If>
+    </Switch>
+
+    <If DisplayName="Requires Root Cause Determination">
+      <If.Then>
+        <Sequence DisplayName="Determine Root Cause Of Exception">
+          <LogMessage DisplayName="Log Root Cause Analysis" />
+        </Sequence>
+      </If.Then>
+    </If>
+
+    <If DisplayName="Check Eligibility For Fee Waiver">
+      <If.Then>
+        <If DisplayName="Assess Risk Level Of Waiver">
+          <If.Then>
+            <LogMessage DisplayName="Log Waiver Risk Assessment" />
+          </If.Then>
+        </If>
+      </If.Then>
+    </If>
+
+    <If DisplayName="Compare Evidence Against Policy Exceptions">
+      <If.Then>
+        <LogMessage DisplayName="Log Policy Comparison" />
+      </If.Then>
+      <If.Else>
+        <If DisplayName="Route Case To Underwriting Specialist">
+          <If.Then>
+            <tasks:CreateFormTask DisplayName="Create Underwriter Review Task" />
+          </If.Then>
+        </If>
+      </If.Else>
+    </If>
+
+    <tasks:CreateFormTask DisplayName="Create Manual Exception Review Task" />
+    <tasks:WaitForFormTask DisplayName="Wait For Reviewer Decision" />
+
+    <If DisplayName="Reviewer Approved Exception">
+      <If.Then>
+        <LogMessage DisplayName="Log Exception Approved" />
+      </If.Then>
+      <If.Else>
+        <LogMessage DisplayName="Log Exception Denied" />
+      </If.Else>
+    </If>
+  </Sequence>
+</Activity>

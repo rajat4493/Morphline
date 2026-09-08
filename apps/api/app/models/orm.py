@@ -39,6 +39,23 @@ class Automation(Base):
     versions: Mapped[list["ProcessVersion"]] = relationship(back_populates="automation", cascade="all, delete-orphan", order_by="ProcessVersion.version_number")
     constraints: Mapped[list["Constraint"]] = relationship(back_populates="automation", cascade="all, delete-orphan")
     events: Mapped[list["EvolutionEvent"]] = relationship(back_populates="automation", cascade="all, delete-orphan", order_by="EvolutionEvent.occurred_at")
+    business_context: Mapped["BusinessContextRow"] = relationship(back_populates="automation", uselist=False, cascade="all, delete-orphan")
+
+
+class BusinessContextRow(Base):
+    """One row per Automation (Section 4/5) — persists across re-uploads,
+    since enterprise risk facts describe the *process*, not any one
+    uploaded package version. Updating this triggers a reassessment
+    (Section 5/16) using the latest already-uploaded ProcessVersion."""
+
+    __tablename__ = "business_contexts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    automation_id: Mapped[int] = mapped_column(ForeignKey("automations.id"), unique=True)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)  # serialized BusinessContext
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+    automation: Mapped[Automation] = relationship(back_populates="business_context")
 
 
 class ProcessVersion(Base):
@@ -94,11 +111,14 @@ class Recommendation(Base):
     recommended_state: Mapped[str] = mapped_column(String(50))
     maximum_safe_state: Mapped[str] = mapped_column(String(50))
     next_possible_state: Mapped[str] = mapped_column(String(50))
+    recommended_pattern: Mapped[str] = mapped_column(String(60), default="KEEP_DETERMINISTIC_RPA")
     confidence: Mapped[str] = mapped_column(String(20))
     why_this: Mapped[list] = mapped_column(JSON, default=list)
-    why_not_further: Mapped[list] = mapped_column(JSON, default=list)
+    why_not_further: Mapped[list] = mapped_column(JSON, default=list)  # [{reason_type, text}]
     top_reasons: Mapped[list] = mapped_column(JSON, default=list)
     top_blockers: Mapped[list] = mapped_column(JSON, default=list)
+    missing_evidence: Mapped[list] = mapped_column(JSON, default=list)
+    business_context_snapshot: Mapped[dict] = mapped_column(JSON, default=dict)  # BusinessContext as of this assessment
 
     assessment: Mapped[Assessment] = relationship(back_populates="recommendation")
 
@@ -111,10 +131,15 @@ class Constraint(Base):
     created_by_assessment_id: Mapped[int] = mapped_column(ForeignKey("assessments.id"))
     category: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(Text)
-    evidence: Mapped[list] = mapped_column(JSON, default=list)
+    evidence: Mapped[list] = mapped_column(JSON, default=list)  # [{type, source, confidence, description, reference}]
     severity: Mapped[str] = mapped_column(String(20))
     status: Mapped[str] = mapped_column(String(20), default="ACTIVE")
+    source: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    autonomy_cap: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    resolution_condition: Mapped[str | None] = mapped_column(Text, nullable=True)
+    owner: Mapped[str | None] = mapped_column(String(200), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolved_by_assessment_id: Mapped[int | None] = mapped_column(ForeignKey("assessments.id"), nullable=True)
     resolution_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -1,0 +1,14 @@
+<Activity x:Class="SendNotification"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:ui="clr-namespace:UiPath.UIAutomation.Activities;assembly=UiPath.UIAutomation.Activities">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. -->
+  <Sequence DisplayName="Send Fulfillment Notification">
+    <InArgument x:TypeArguments="x:String" Name="CustomerId" />
+    <InArgument x:TypeArguments="x:String" Name="OrderId" />
+
+    <ui:Click DisplayName="Click Notification App Compose" Selector="&lt;wnd app='notify.exe' /&gt;&lt;ctrl name='ComposeButton' /&gt;" />
+    <ui:TypeInto DisplayName="Type Notification Message" Selector="&lt;wnd app='notify.exe' /&gt;&lt;ctrl name='MessageField' /&gt;" />
+    <ui:Click DisplayName="Click Send" Selector="&lt;wnd app='notify.exe' /&gt;&lt;ctrl name='SendButton' /&gt;" />
+  </Sequence>
+</Activity>

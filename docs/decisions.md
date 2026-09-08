@@ -6,6 +6,64 @@ first.
 
 ---
 
+### D-016 — `Level` stays LOW/MEDIUM/HIGH; no fourth `UNKNOWN` value
+The business-context repair (Section 19) suggested a dial of
+LOW/MEDIUM/HIGH/UNKNOWN for primary display values. Rather than adding
+`UNKNOWN` to `Level` (which would force every consumer — API responses,
+frontend badges, the ladder UI — to handle a fourth case, and risks
+conflating "assessed as low-risk" with "not assessed"), uncertainty is
+represented by the existing `confidence` field (already `LOW`/`MEDIUM`/
+`HIGH`) paired with explicit `UNKNOWN`-typed/empty evidence and the
+`missing_evidence` list. A dimension always reports a best-guess `level`
+plus a `confidence` the UI displays alongside it — `LEVEL=LOW,
+CONFIDENCE=LOW` is never visually mistaken for `LEVEL=LOW, CONFIDENCE=HIGH`
+because both are always shown together. Matches the worked examples in
+Sections 8/9 literally (they show a level plus a separate confidence
+annotation, never a level of "UNKNOWN").
+
+### D-015 — Evidence "directness" reuses `Confidence`, not a new DIRECT/INFERRED/UNKNOWN enum
+Section 3B's example asks for evidence categories "DIRECT / INFERRED /
+UNKNOWN" for Reasoning Opportunity specifically. This is the same axis the
+codebase already models as `Confidence.KNOWN/INFERRED/UNKNOWN` everywhere
+else (parser evidence, dependency confidence). Introducing a second,
+differently-named enum for the same concept in one dimension would be
+inconsistent for no benefit — `EvidenceItem.confidence` (`Confidence`) is
+used uniformly, with `KNOWN` read as "direct" in this context.
+
+### D-014 — `EvidenceType` (TECHNICAL/BUSINESS/RUNTIME/INFERRED) is orthogonal to `Confidence`
+Section 6 asks for evidence to carry a source-type tag; Section 3B asks for
+a directness/certainty tag. These are two different axes (a `BUSINESS`
+fact can be `KNOWN` with certainty; an `INFERRED`-type keyword match is
+definitionally uncertain) and are modeled as two separate fields on
+`EvidenceItem` rather than collapsed into one enum, so e.g. a UI can group
+by type and separately show confidence per item.
+
+### D-013 — The reasoning-opportunity / business-context repair (this pass)
+Summarizes the conceptual fix applied in this pass, superseding the
+scoring/recommendation design from the initial build: `reasoning_need` was
+renamed and split into `current_ai_usage` (descriptive) and
+`reasoning_opportunity` (drives Evolution Value), `tool_readiness` was
+renamed `execution_tool_readiness` and extended to recognize reusable
+UiPath subprocesses as valid tools, `blast_radius`/`reversibility`/
+`compliance_sensitivity` were rewired to prefer Business Context over
+technical inference and to never claim confidence they don't have, a
+`BusinessContext` model was added as a first-class persisted entity
+alongside (not inside) `ProcessModel`, `MigrationPattern` was added
+alongside `EvolutionState`, and "Why Not Further" was split into
+BLOCKED/UNKNOWN/NOT_READY/NOT_VALUABLE. See `docs/product-thesis.md`,
+`docs/scoring-model.md`, and `docs/recommendation-engine.md` for the full
+detail — this entry exists as the single pointer to "why did the dimension
+keys change between the initial build and now."
+
+### D-012 — `POSSIBLY_RESOLVED` added as a new `ConstraintStatus`
+Section 15 asked for a way to avoid silently auto-resolving a constraint
+when the resolution isn't confirmed. Rather than adding a parallel
+tracking field, a new enum value was added directly to `ConstraintStatus`
+— it participates in the same lifecycle and persistence path as
+`RESOLVED`/`ACTIVE`, differing only in which one `reconcile_constraints`
+picks based on whether the original triggering evidence was fully `KNOWN`.
+See `docs/constraint-memory.md`.
+
 ### D-011 — Pinned `next` to 14.2.35, not 14.2.15
 `npm install` flagged 14.2.15 for a known security advisory. Bumped to the
 latest patched 14.2.x rather than jumping to Next 15/16 mid-build, since a

@@ -1,0 +1,10 @@
+{
+  "name": "Loan Exception Review (Synthetic Sample)",
+  "projectId": "sample-loan-exception-review-0001",
+  "description": "SYNTHETIC TEST FIXTURE. A large deterministic decision tree that routes loan-application exceptions for manual review. No AI/LLM activities anywhere in this implementation, despite substantial judgment being exercised by humans throughout.",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.Mail.Activities": "1.15.0",
+    "UiPath.Persistence.Activities": "1.9.0"
+  }
+}

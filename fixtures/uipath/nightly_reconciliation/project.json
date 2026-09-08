@@ -1,0 +1,9 @@
+{
+  "name": "Nightly Ledger Reconciliation (Synthetic Sample)",
+  "projectId": "sample-nightly-reconciliation-0001",
+  "description": "SYNTHETIC TEST FIXTURE. Compares two internal ledger totals nightly and flags exact-value mismatches. No ambiguity, no manual review, no customer/external impact.",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.WebAPI.Activities": "1.18.0"
+  }
+}

@@ -17,13 +17,23 @@ export interface Workspace {
   automations?: { id: number; name: string; is_sample: boolean; version_count: number }[];
 }
 
+export type EvidenceType = "TECHNICAL" | "BUSINESS" | "RUNTIME" | "INFERRED";
+
+export interface EvidenceItem {
+  type: EvidenceType;
+  source: string;
+  confidence: "KNOWN" | "INFERRED" | "UNKNOWN";
+  description: string;
+  reference?: string | null;
+}
+
 export interface DimensionScore {
   dimension: string;
   label: string;
   score: number;
   level: "LOW" | "MEDIUM" | "HIGH";
   confidence: "LOW" | "MEDIUM" | "HIGH";
-  evidence: string[];
+  evidence: EvidenceItem[];
   explanation: string;
 }
 
@@ -34,16 +44,34 @@ export type EvolutionState =
   | "ADVANCED_HYBRID"
   | "HIGH_AUTONOMY";
 
+export type MigrationPattern =
+  | "KEEP_DETERMINISTIC_RPA"
+  | "RPA_WITH_AI_AUGMENTATION"
+  | "DETERMINISTIC_WORKFLOW_WITH_AGENT_DECISION"
+  | "AGENT_ORCHESTRATED_RPA_TOOLS"
+  | "AGENT_WITH_API_TOOLS"
+  | "HYBRID_WITH_HUMAN_APPROVAL"
+  | "HIGH_AUTONOMY_AGENT";
+
+export type WhyNotReasonType = "BLOCKED" | "UNKNOWN" | "NOT_READY" | "NOT_VALUABLE";
+
+export interface WhyNotReason {
+  reason_type: WhyNotReasonType;
+  text: string;
+}
+
 export interface Recommendation {
   current_state: EvolutionState;
   recommended_state: EvolutionState;
   maximum_safe_state: EvolutionState;
   next_possible_state: EvolutionState;
+  recommended_pattern: MigrationPattern;
   confidence: "LOW" | "MEDIUM" | "HIGH";
   why_this: string[];
-  why_not_further: string[];
+  why_not_further: WhyNotReason[];
   top_reasons: string[];
   top_blockers: string[];
+  missing_evidence: string[];
 }
 
 export interface Assessment {
@@ -59,10 +87,15 @@ export interface Constraint {
   id: number;
   category: string;
   description: string;
-  evidence: string[];
+  evidence: EvidenceItem[];
   severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  status: "ACTIVE" | "RESOLVED" | "ACCEPTED_RISK" | "UNKNOWN";
+  status: "ACTIVE" | "RESOLVED" | "ACCEPTED_RISK" | "UNKNOWN" | "POSSIBLY_RESOLVED";
+  source: string | null;
+  autonomy_cap: EvolutionState | null;
+  resolution_condition: string | null;
+  owner: string | null;
   created_at: string;
+  last_seen_at: string;
   resolved_at: string | null;
   resolution_notes: string | null;
 }
@@ -90,6 +123,59 @@ export interface SystemRef {
   evidence: { source: string; detail: string; confidence: string }[];
 }
 
+export type ImpactLevel = "NONE" | "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN";
+export type ImpactScope =
+  | "INTERNAL_ONLY"
+  | "SINGLE_CASE"
+  | "MULTIPLE_CASES"
+  | "BUSINESS_UNIT"
+  | "ENTERPRISE"
+  | "EXTERNAL_CUSTOMERS"
+  | "UNKNOWN";
+export type TriState = "YES" | "NO" | "UNKNOWN";
+
+export interface BusinessContext {
+  customer_impact: ImpactLevel;
+  financial_impact: ImpactLevel;
+  legal_regulatory_impact: ImpactLevel;
+  employee_impact: ImpactLevel;
+  external_party_impact: ImpactLevel;
+  maximum_scope: ImpactScope;
+  monetary_exposure: ImpactLevel;
+  human_accountability_required: TriState;
+  mandatory_approval: TriState;
+  irreversible_action: TriState;
+  regulated_process: TriState;
+  sensitive_data: TriState;
+  critical_service: TriState;
+  process_owner: string | null;
+  business_description: string | null;
+  known_policies: string | null;
+  known_constraints: string | null;
+  notes: string | null;
+}
+
+export const EMPTY_BUSINESS_CONTEXT: BusinessContext = {
+  customer_impact: "UNKNOWN",
+  financial_impact: "UNKNOWN",
+  legal_regulatory_impact: "UNKNOWN",
+  employee_impact: "UNKNOWN",
+  external_party_impact: "UNKNOWN",
+  maximum_scope: "UNKNOWN",
+  monetary_exposure: "UNKNOWN",
+  human_accountability_required: "UNKNOWN",
+  mandatory_approval: "UNKNOWN",
+  irreversible_action: "UNKNOWN",
+  regulated_process: "UNKNOWN",
+  sensitive_data: "UNKNOWN",
+  critical_service: "UNKNOWN",
+  process_owner: null,
+  business_description: null,
+  known_policies: null,
+  known_constraints: null,
+  notes: null,
+};
+
 export interface AutomationOverview {
   id: number;
   name: string;
@@ -103,6 +189,7 @@ export interface AutomationOverview {
   systems?: SystemRef[];
   queues?: { name: string }[];
   assets?: { name: string; kind: string | null }[];
+  business_context?: BusinessContext;
 }
 
 export interface FlowGraph {
@@ -157,6 +244,9 @@ export interface ReassessmentDiff {
   what_changed: string[];
   what_resolved: string[];
   new_risks: string[];
+  business_context_changes: string[];
+  evolution_state_changed: boolean;
+  migration_pattern_changed: boolean;
   higher_level_possible: boolean;
   why: string[];
 }
@@ -189,6 +279,12 @@ export const api = {
   getHistory: (automationId: number) => request<EvolutionEvent[]>(`/automations/${automationId}/history`),
   getReassessmentDiff: (automationId: number) => request<ReassessmentDiff>(`/automations/${automationId}/reassessment-diff`),
   migrationPackUrl: (automationId: number) => `${API_BASE}/automations/${automationId}/migration-pack`,
+  getBusinessContext: (automationId: number) => request<BusinessContext>(`/automations/${automationId}/business-context`),
+  updateBusinessContext: (automationId: number, biz: BusinessContext) =>
+    request<{ business_context: BusinessContext; assessment: Assessment | null }>(
+      `/automations/${automationId}/business-context`,
+      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(biz) }
+    ),
 };
 
 export const STATE_LABELS: Record<EvolutionState, string> = {
@@ -206,3 +302,13 @@ export const STATE_ORDER: EvolutionState[] = [
   "ADVANCED_HYBRID",
   "HIGH_AUTONOMY",
 ];
+
+export const PATTERN_LABELS: Record<MigrationPattern, string> = {
+  KEEP_DETERMINISTIC_RPA: "Keep Deterministic RPA",
+  RPA_WITH_AI_AUGMENTATION: "RPA with AI Augmentation",
+  DETERMINISTIC_WORKFLOW_WITH_AGENT_DECISION: "Deterministic Workflow with Agent Decision",
+  AGENT_ORCHESTRATED_RPA_TOOLS: "Agent-Orchestrated RPA Tools",
+  AGENT_WITH_API_TOOLS: "Agent with API Tools",
+  HYBRID_WITH_HUMAN_APPROVAL: "Hybrid with Human Approval",
+  HIGH_AUTONOMY_AGENT: "High-Autonomy Agent",
+};

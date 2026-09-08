@@ -6,20 +6,27 @@ import {
   api,
   Assessment,
   AutomationOverview,
+  BusinessContext,
   Constraint,
   DimensionScore,
+  EMPTY_BUSINESS_CONTEXT,
+  EvidenceItem,
   EvolutionEvent,
   FlowGraph as FlowGraphData,
+  WhyNotReason,
+  WhyNotReasonType,
 } from "@/lib/api";
 import { StateBadge, LevelPill, SeverityPill } from "@/components/StateBadge";
 import { EvolutionLadder } from "@/components/EvolutionLadder";
 import { FlowGraph } from "@/components/FlowGraph";
+import { BusinessContextForm } from "@/components/BusinessContextForm";
 
 const TABS = [
   "Overview",
   "Process Flow",
   "Evolution Assessment",
   "Why / Why Not",
+  "Business Context",
   "Dependencies",
   "Constraints",
   "Evolution History",
@@ -37,11 +44,24 @@ export default function AutomationDetailPage() {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [constraints, setConstraints] = useState<Constraint[] | null>(null);
   const [history, setHistory] = useState<EvolutionEvent[] | null>(null);
+  const [businessContext, setBusinessContext] = useState<BusinessContext>(EMPTY_BUSINESS_CONTEXT);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  function refreshAfterReassessment(newAssessment: Assessment | null, biz: BusinessContext) {
+    setBusinessContext(biz);
+    if (newAssessment) {
+      setAssessment(newAssessment);
+      api.getConstraints(automationId).then(setConstraints).catch(() => {});
+      api.getHistory(automationId).then(setHistory).catch(() => {});
+    }
+  }
+
   useEffect(() => {
-    api.getOverview(automationId).then(setOverview).catch((e) => setError(String(e)));
+    api.getOverview(automationId).then((o) => {
+      setOverview(o);
+      if (o.business_context) setBusinessContext(o.business_context);
+    }).catch((e) => setError(String(e)));
     api.getFlow(automationId).then(setFlow).catch(() => {});
     api.getLatestAssessment(automationId).then(setAssessment).catch(() => {});
     api.getConstraints(automationId).then(setConstraints).catch(() => {});
@@ -93,10 +113,30 @@ export default function AutomationDetailPage() {
         {tab === "Overview" && rec && (
           <div className="space-y-6">
             <EvolutionLadder rec={rec} />
+
+            {assessment?.dimensions && (
+              <CurrentVsOpportunity dimensions={assessment.dimensions} />
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ReasonsCard title="Top Reasons" items={rec.top_reasons} tone="positive" />
               <ReasonsCard title="Top Blockers" items={rec.top_blockers} tone="negative" />
             </div>
+
+            {rec.missing_evidence.length > 0 && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <div className="text-sm font-semibold text-amber-800">Missing Enterprise Context</div>
+                <p className="mt-1 text-xs text-amber-800">
+                  Absence of evidence is not evidence of safety — these gaps can cap the maximum safe state until confirmed.
+                </p>
+                <ul className="mt-2 list-disc pl-5 text-sm text-amber-800 space-y-1">
+                  {rec.missing_evidence.map((m, i) => (
+                    <li key={i}>{m}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {overview.parser_warnings && overview.parser_warnings.length > 0 && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
                 <div className="text-sm font-semibold text-amber-800">Parser Warnings</div>
@@ -194,17 +234,21 @@ export default function AutomationDetailPage() {
               {rec.why_not_further.length === 0 ? (
                 <p className="mt-3 text-sm text-subtle">No active blockers found.</p>
               ) : (
-                <ul className="mt-3 space-y-2 text-sm text-ink">
+                <ul className="mt-3 space-y-2.5 text-sm text-ink">
                   {rec.why_not_further.map((r, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="text-rose-600">✕</span>
-                      <span>{r}</span>
+                    <li key={i} className="flex gap-2 items-start">
+                      <WhyNotBadge reasonType={r.reason_type} />
+                      <span>{r.text}</span>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
           </div>
+        )}
+
+        {tab === "Business Context" && (
+          <BusinessContextForm automationId={automationId} initial={businessContext} onSaved={refreshAfterReassessment} />
         )}
 
         {tab === "Dependencies" && (
@@ -267,17 +311,24 @@ export default function AutomationDetailPage() {
                   <span className="text-sm font-semibold text-ink">{c.category.replaceAll("_", " ")}</span>
                   <SeverityPill severity={c.severity} />
                   <StatusPill status={c.status} />
+                  {c.autonomy_cap && <span className="text-[11px] text-subtle">caps at {c.autonomy_cap.replaceAll("_", " ")}</span>}
                 </div>
                 <p className="mt-1.5 text-sm text-subtle">{c.description}</p>
                 {c.evidence.length > 0 && (
                   <ul className="mt-2 list-disc pl-5 text-xs text-subtle space-y-0.5">
                     {c.evidence.map((e, i) => (
-                      <li key={i}>{e}</li>
+                      <li key={i}>[{e.type}] {e.description}</li>
                     ))}
                   </ul>
                 )}
-                {c.status === "RESOLVED" && c.resolution_notes && (
-                  <p className="mt-2 text-xs text-emerald-700">Resolved: {c.resolution_notes}</p>
+                {c.resolution_condition && (
+                  <p className="mt-2 text-xs text-ink"><span className="font-medium">Resolves when:</span> {c.resolution_condition}</p>
+                )}
+                {c.owner && <p className="mt-1 text-xs text-subtle">Owner: {c.owner}</p>}
+                {(c.status === "RESOLVED" || c.status === "POSSIBLY_RESOLVED") && c.resolution_notes && (
+                  <p className={`mt-2 text-xs ${c.status === "RESOLVED" ? "text-emerald-700" : "text-amber-700"}`}>
+                    {c.status === "RESOLVED" ? "Resolved" : "Possibly resolved — confirm"}: {c.resolution_notes}
+                  </p>
                 )}
               </div>
             ))}
@@ -305,15 +356,12 @@ export default function AutomationDetailPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-ink">{d.label}</span>
                   <LevelPill level={d.level} />
+                  <span className="text-[11px] text-subtle">confidence: {d.confidence}</span>
                 </div>
                 {d.evidence.length === 0 ? (
                   <p className="mt-1.5 text-sm text-amber-700 font-medium">INSUFFICIENT EVIDENCE</p>
                 ) : (
-                  <ul className="mt-1.5 list-disc pl-5 text-sm text-subtle space-y-0.5">
-                    {d.evidence.map((e, i) => (
-                      <li key={i}>{e}</li>
-                    ))}
-                  </ul>
+                  <EvidenceByType evidence={d.evidence} />
                 )}
               </div>
             ))}
@@ -365,6 +413,82 @@ function StatusPill({ status }: { status: string }) {
     RESOLVED: "bg-emerald-50 text-emerald-700",
     ACCEPTED_RISK: "bg-amber-50 text-amber-700",
     UNKNOWN: "bg-slate-100 text-slate-600",
+    POSSIBLY_RESOLVED: "bg-amber-50 text-amber-700",
   };
-  return <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium ${styles[status]}`}>{status}</span>;
+  return <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium ${styles[status] ?? "bg-slate-100 text-slate-600"}`}>{status.replaceAll("_", " ")}</span>;
+}
+
+const WHY_NOT_STYLES: Record<WhyNotReasonType, { label: string; className: string }> = {
+  BLOCKED: { label: "BLOCKED", className: "bg-rose-100 text-rose-700" },
+  UNKNOWN: { label: "UNKNOWN", className: "bg-slate-200 text-slate-700" },
+  NOT_READY: { label: "NOT READY", className: "bg-amber-100 text-amber-700" },
+  NOT_VALUABLE: { label: "NOT VALUABLE", className: "bg-blue-100 text-blue-700" },
+};
+
+function WhyNotBadge({ reasonType }: { reasonType: WhyNotReasonType }) {
+  const s = WHY_NOT_STYLES[reasonType];
+  return <span className={`shrink-0 mt-0.5 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${s.className}`}>{s.label}</span>;
+}
+
+const EVIDENCE_TYPE_ORDER = ["BUSINESS", "TECHNICAL", "RUNTIME", "INFERRED"] as const;
+const EVIDENCE_TYPE_LABELS: Record<string, string> = {
+  BUSINESS: "Business",
+  TECHNICAL: "Technical",
+  RUNTIME: "Runtime",
+  INFERRED: "Inferred",
+};
+
+function EvidenceByType({ evidence }: { evidence: EvidenceItem[] }) {
+  const grouped: Record<string, EvidenceItem[]> = {};
+  for (const e of evidence) {
+    (grouped[e.type] ??= []).push(e);
+  }
+  return (
+    <div className="mt-2 space-y-2">
+      {EVIDENCE_TYPE_ORDER.filter((t) => grouped[t]?.length).map((t) => (
+        <div key={t}>
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-subtle">{EVIDENCE_TYPE_LABELS[t]}</div>
+          <ul className="mt-0.5 space-y-0.5">
+            {grouped[t].map((e, i) => (
+              <li key={i} className="text-sm text-ink flex gap-1.5">
+                <span className={e.confidence === "UNKNOWN" ? "text-amber-600" : "text-emerald-600"}>{e.confidence === "UNKNOWN" ? "?" : "✓"}</span>
+                <span>{e.description}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CurrentVsOpportunity({ dimensions }: { dimensions: DimensionScore[] }) {
+  const current = dimensions.find((d) => d.dimension === "current_ai_usage");
+  const opportunity = dimensions.find((d) => d.dimension === "reasoning_opportunity");
+  if (!current || !opportunity) return null;
+  return (
+    <div className="rounded-lg border border-line bg-white p-5">
+      <h3 className="text-sm font-semibold text-ink">Current Implementation vs. Reasoning Opportunity</h3>
+      <p className="mt-1 text-xs text-subtle">
+        These are deliberately separate. A process can score HIGH on opportunity with zero AI activities today — and a
+        process already using AI can still score LOW on opportunity if that AI isn&apos;t solving a genuine ambiguity problem.
+      </p>
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="rounded-md border border-line p-3">
+          <div className="text-xs uppercase text-subtle">Current AI / Reasoning Usage (descriptive only)</div>
+          <div className="mt-1 flex items-center gap-2">
+            <LevelPill level={current.level} />
+            <span className="text-xs text-subtle">what it does today</span>
+          </div>
+        </div>
+        <div className="rounded-md border border-accent/40 bg-blue-50/30 p-3">
+          <div className="text-xs uppercase text-subtle">Reasoning Opportunity (drives recommendation)</div>
+          <div className="mt-1 flex items-center gap-2">
+            <LevelPill level={opportunity.level} />
+            <span className="text-xs text-subtle">confidence: {opportunity.confidence}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

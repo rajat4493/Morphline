@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from apps.api.app.core.config import settings
 from apps.api.app.db import Base, engine
-from apps.api.app.routers import automations, dashboard, uploads, workspaces
+from apps.api.app.routers import automations, business_context, dashboard, uploads, workspaces
 
 
 @asynccontextmanager
@@ -33,4 +33,5 @@ def health() -> dict:
 app.include_router(workspaces.router)
 app.include_router(uploads.router)
 app.include_router(automations.router)
+app.include_router(business_context.router)
 app.include_router(dashboard.router)

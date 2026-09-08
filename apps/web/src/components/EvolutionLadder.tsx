@@ -1,4 +1,5 @@
-import { EvolutionState, Recommendation, STATE_LABELS, STATE_ORDER } from "@/lib/api";
+import { PATTERN_LABELS, Recommendation, STATE_LABELS, STATE_ORDER } from "@/lib/api";
+import type { EvolutionState } from "@/lib/api";
 
 export function EvolutionLadder({ rec }: { rec: Recommendation }) {
   return (
@@ -7,6 +8,10 @@ export function EvolutionLadder({ rec }: { rec: Recommendation }) {
       <StatBlock label="Recommended State" state={rec.recommended_state} highlight />
       <StatBlock label="Maximum Safe State" state={rec.maximum_safe_state} />
       <StatBlock label="Next Possible State" state={rec.next_possible_state} muted />
+      <div className="sm:col-span-2 lg:col-span-4 rounded-lg border border-accent/40 bg-blue-50/30 p-4">
+        <div className="text-xs font-medium text-subtle uppercase tracking-wide">Recommended Migration Pattern</div>
+        <div className="mt-1 text-base font-semibold text-ink">{PATTERN_LABELS[rec.recommended_pattern]}</div>
+      </div>
       <div className="sm:col-span-2 lg:col-span-4">
         <Ladder rec={rec} />
       </div>

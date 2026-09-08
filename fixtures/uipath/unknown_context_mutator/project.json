@@ -1,0 +1,9 @@
+{
+  "name": "Inventory Record Updater (Synthetic Sample)",
+  "projectId": "sample-unknown-context-mutator-0001",
+  "description": "SYNTHETIC TEST FIXTURE. A clean, API-based process that mutates a production inventory record. No compliance keywords, no human checkpoints, good tooling and observability on paper — but Business Context has deliberately not been supplied, which must still cap autonomy (Section 13).",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.WebAPI.Activities": "1.18.0"
+  }
+}

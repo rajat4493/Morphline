@@ -10,12 +10,11 @@ from sqlalchemy.orm import Session
 from apps.api.app.db import get_db
 from apps.api.app.flowgraph import build_flow_graph
 from apps.api.app.models import orm
-from apps.api.app.pipeline import snapshot_from_assessment
-from apps.api.app.serializers import serialize_assessment, serialize_constraint, serialize_event
+from apps.api.app.pipeline import assessment_dimension_scores, load_business_context, snapshot_from_assessment
+from apps.api.app.serializers import serialize_assessment, serialize_business_context, serialize_constraint, serialize_event
 from memory.diff import compare_assessments
 from migration.pack import generate_pack
 from packages.shared.canonical import ProcessModel
-from packages.shared.scoring_types import DimensionScore
 from llm.provider import get_llm_provider
 
 router = APIRouter(prefix="/automations", tags=["automations"])
@@ -57,6 +56,7 @@ def get_overview(automation_id: int, db: Session = Depends(get_db)):
         "systems": [s.model_dump() for s in pm.systems],
         "queues": [q.model_dump() for q in pm.queues],
         "assets": [a.model_dump() for a in pm.assets],
+        "business_context": serialize_business_context(automation.business_context),
     }
 
 
@@ -136,15 +136,13 @@ def generate_migration_pack(automation_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "No assessment found")
 
     pm = ProcessModel.model_validate(version.process_model)
-    scores = {d.dimension: DimensionScore(
-        dimension=d.dimension, label=d.label, score=d.score, level=d.level,
-        confidence=d.confidence, evidence=d.evidence, explanation=d.explanation,
-    ) for d in assessment.dimensions}
+    scores = assessment_dimension_scores(assessment)
     snapshot = snapshot_from_assessment(db, assessment)
     rec = snapshot.recommendation
     active_constraints = snapshot.active_constraints
+    biz = load_business_context(db, automation.id)
 
-    files = generate_pack(pm, scores, rec, active_constraints)
+    files = generate_pack(pm, scores, rec, active_constraints, biz)
 
     db.add(orm.MigrationRun(assessment_id=assessment.id, files=files))
     db.commit()

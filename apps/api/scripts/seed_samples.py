@@ -22,6 +22,11 @@ SAMPLES = {
     "invoice_processing": "Invoice Processing (Sample)",
     "customer_exclusion": "Customer Exclusion Review (Sample)",
     "internal_report": "Internal Report Generation (Sample)",
+    "nightly_reconciliation": "Nightly Ledger Reconciliation (Sample)",
+    "loan_exception_review": "Loan Exception Review (Sample)",
+    "ui_heavy_reusable_tools": "Order Fulfillment via Reusable Subprocesses (Sample)",
+    "unknown_context_mutator": "Inventory Record Updater (Sample)",
+    "ai_overreach": "Report Header Formatter (Sample)",
 }
 
 

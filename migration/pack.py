@@ -8,7 +8,9 @@ architecture output.
 from __future__ import annotations
 
 import json
+from typing import Optional
 
+from packages.shared.business_context import BusinessContext
 from packages.shared.canonical import ProcessModel
 from packages.shared.enums import NodeCategory
 from packages.shared.memory_types import ConstraintRecord
@@ -43,12 +45,16 @@ def _target_architecture_md(pm: ProcessModel, rec: RecommendationResult) -> str:
         f"# Target Architecture: {pm.project_name}",
         "",
         f"Recommended state: **{rec.recommended_state.label}** (maximum safe state today: {rec.maximum_safe_state.label})",
+        f"Recommended migration pattern: **{rec.recommended_pattern.label}**",
         "",
         "## Why this state", "",
     ]
     lines += [f"- {r}" for r in rec.why_this]
     lines += ["", "## Why not further", ""]
-    lines += [f"- {b}" for b in rec.why_not_further]
+    lines += [f"- [{b.reason_type.value}] {b.text}" for b in rec.why_not_further]
+    if rec.missing_evidence:
+        lines += ["", "## Missing evidence", ""]
+        lines += [f"- {m}" for m in rec.missing_evidence]
     lines += ["", "## Component classification (by current step)", ""]
     for wf in pm.workflows:
         for step in wf.steps:
@@ -68,8 +74,32 @@ def _migration_backlog_md(pm: ProcessModel, constraints: list[ConstraintRecord])
 def _guardrails_md(rec: RecommendationResult) -> str:
     lines = ["# Guardrails", "", "Derived from active blockers; refine with an architect before implementation.", ""]
     for b in rec.why_not_further:
-        lines.append(f"- Guardrail needed for: {b}")
+        lines.append(f"- Guardrail needed for ({b.reason_type.value}): {b.text}")
     lines.append("- All irreversible actions must pass through the deterministic execution layer, never direct agent action.")
+    return "\n".join(lines) + "\n"
+
+
+def _business_context_md(biz: Optional[BusinessContext]) -> str:
+    if biz is None or not biz.is_supplied():
+        return "# Business Context\n\nNo Business Context has been supplied for this process. Enterprise risk factors (customer/financial/legal impact, scope, reversibility, approval requirements) are UNKNOWN — confirm these before relying on this migration pack for a customer-impacting or state-mutating process.\n"
+    lines = ["# Business Context", ""]
+    for field in (
+        "customer_impact", "financial_impact", "legal_regulatory_impact", "employee_impact",
+        "external_party_impact", "maximum_scope", "monetary_exposure", "human_accountability_required",
+        "mandatory_approval", "irreversible_action", "regulated_process", "sensitive_data", "critical_service",
+    ):
+        lines.append(f"- {field.replace('_', ' ').title()}: {getattr(biz, field).value}")
+    if biz.process_owner:
+        lines.append(f"- Process Owner: {biz.process_owner}")
+    if biz.known_policies:
+        lines.append(f"- Known Policies: {biz.known_policies}")
+    if biz.known_constraints:
+        lines.append(f"- Known Constraints: {biz.known_constraints}")
+    if biz.notes:
+        lines.append(f"- Notes: {biz.notes}")
+    if biz.critical_unknown_fields():
+        lines += ["", "## Still Unknown", ""]
+        lines += [f"- {f}" for f in biz.critical_unknown_fields()]
     return "\n".join(lines) + "\n"
 
 
@@ -109,17 +139,19 @@ def generate_pack(
     scores: dict[str, DimensionScore],
     rec: RecommendationResult,
     active_constraints: list[ConstraintRecord],
+    biz: Optional[BusinessContext] = None,
 ) -> dict[str, str]:
-    """Returns {filename: text_content} for the 11 migration pack files."""
+    """Returns {filename: text_content} for the migration pack files."""
     return {
         "current_process.md": _current_process_md(pm),
         "process_model.json": pm.model_dump_json(indent=2),
-        "assessment.json": json.dumps({d: s.model_dump() for d, s in scores.items()}, indent=2, default=str),
+        "business_context.md": _business_context_md(biz),
+        "assessment.json": json.dumps({d: s.model_dump(mode="json") for d, s in scores.items()}, indent=2),
         "target_architecture.md": _target_architecture_md(pm, rec),
         "migration_backlog.md": _migration_backlog_md(pm, active_constraints),
-        "constraints.json": json.dumps([c.model_dump() for c in active_constraints], indent=2, default=str),
+        "constraints.json": json.dumps([c.model_dump(mode="json") for c in active_constraints], indent=2),
         "evidence.json": json.dumps(
-            {d: s.evidence for d, s in scores.items()}, indent=2, default=str
+            {d: [e.model_dump(mode="json") for e in s.evidence] for d, s in scores.items()}, indent=2
         ),
         "target_tool_candidates.json": json.dumps(_target_tool_candidates_json(pm), indent=2, default=str),
         "guardrails.md": _guardrails_md(rec),

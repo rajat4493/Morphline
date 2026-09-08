@@ -1,0 +1,19 @@
+<Activity x:Class="Main"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- SYNTHETIC TEST FIXTURE: not a real UiPath export. -->
+  <Sequence DisplayName="Main Sequence">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="CustomerId" />
+      <Variable x:TypeArguments="x:String" Name="OrderId" />
+    </Sequence.Variables>
+
+    <LogMessage DisplayName="Determine Fulfillment Priority For Order" />
+    <LogMessage DisplayName="Review Order For Fulfillment Exceptions" />
+    <InvokeWorkflowFile DisplayName="Invoke Customer Lookup" WorkflowFileName="CustomerLookup.xaml" />
+    <InvokeWorkflowFile DisplayName="Invoke Update SAP Order" WorkflowFileName="UpdateSAP.xaml" />
+    <InvokeWorkflowFile DisplayName="Invoke Send Notification" WorkflowFileName="SendNotification.xaml" />
+
+    <LogMessage DisplayName="Log Order Fulfillment Complete" />
+  </Sequence>
+</Activity>

@@ -34,7 +34,7 @@ def test_upload_creates_automation_and_assessment(client):
     assert r.status_code == 201, r.text
     body = r.json()
     assert body["assessment"]["recommendation"]["recommended_state"] == "HYBRID_AGENT"
-    assert len(body["assessment"]["dimensions"]) == 12
+    assert len(body["assessment"]["dimensions"]) == 13  # 12 risk/readiness dimensions + current_ai_usage (descriptive only)
 
 
 def test_upload_rejects_disallowed_extension(client):

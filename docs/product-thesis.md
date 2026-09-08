@@ -23,6 +23,31 @@ not a universal goal — it is one possible endpoint among several valid ones
 product's job is to determine, defend, and remember the *right* target state
 for each process, not to push everything toward the most autonomous option.
 
+## What Morphline actually evaluates
+
+Morphline answers **"what is the safest, most valuable form this automation
+can take today?"** — never **"how much AI does this automation already
+contain?"** Those are different questions with different answers, and
+conflating them was the single biggest conceptual bug in the first version
+of this product (see D-013 in `docs/decisions.md`).
+
+Concretely, this means Morphline always keeps two things separate:
+
+- **Current Implementation** — what the automation does today, including
+  whatever AI/LLM activities already exist in it. Purely descriptive.
+- **Latent Evolution Opportunity** — whether the underlying *business
+  process* contains work that would genuinely benefit from contextual
+  reasoning, independent of whether that reasoning has been implemented yet.
+
+A deterministic RPA bot with zero AI activities can score HIGH on
+opportunity — often precisely *because* the platform it was built on
+couldn't do contextual judgment, so a human absorbed that judgment instead
+(manual review queues, exception-routing decision trees, free-text triage).
+Conversely, a process that already calls an LLM for something mechanical
+(reformatting a date string, say) can correctly score LOW on opportunity —
+the AI call doesn't mean agentic reasoning is *needed* there, just that it
+was used. See `docs/scoring-model.md` for how this is implemented.
+
 ## Why this is not "just an LLM wrapper"
 
 Anyone can point an LLM at a XAML file and ask "should this be an agent?".
@@ -40,6 +65,13 @@ and no memory. This product owns four things an LLM call alone cannot:
    guess every time.
 4. **Evolution history** — an auditable timeline per process, across
    reassessments, that a CIO or auditor can trust.
+5. **Structured Business Context** — enterprise risk facts (customer/
+   financial/legal impact, reversibility, approval requirements) that
+   cannot be reliably read out of a XAML file at all. Morphline treats
+   these as first-class, explicitly-supplied, persisted data — never
+   hallucinated from the package — and lets their absence itself cap
+   recommended autonomy (Section 13: absence of evidence is not evidence
+   of safety).
 
 ## What "done" looks like for Phase 1 (personal V0)
 

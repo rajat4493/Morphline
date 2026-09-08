@@ -1,0 +1,9 @@
+{
+  "name": "Order Fulfillment via Reusable Subprocesses (Synthetic Sample)",
+  "projectId": "sample-ui-heavy-reusable-tools-0001",
+  "description": "SYNTHETIC TEST FIXTURE. UI-automation-heavy end to end, but every UI interaction is encapsulated inside a reusable, argument-bound subprocess — the pattern a future agent could orchestrate as bounded deterministic tools without any of them being replaced by APIs.",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.UIAutomation.Activities": "23.10.2"
+  }
+}

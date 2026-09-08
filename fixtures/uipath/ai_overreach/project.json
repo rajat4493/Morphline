@@ -1,0 +1,10 @@
+{
+  "name": "Report Header Formatter (Synthetic Sample)",
+  "projectId": "sample-ai-overreach-0001",
+  "description": "SYNTHETIC TEST FIXTURE. Uses a generative-text activity to format a report header date string — a purely mechanical, deterministic transformation that happens to be implemented via an AI activity. Exists to prove Current AI Usage and Reasoning Opportunity must not be conflated (Case 7).",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.WebAPI.Activities": "1.18.0",
+    "UiPath.MLServices.Activities": "2.1.0"
+  }
+}
