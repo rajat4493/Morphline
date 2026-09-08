@@ -50,12 +50,22 @@ def _severity_rank(s: ConstraintSeverity) -> int:
     return [ConstraintSeverity.LOW, ConstraintSeverity.MEDIUM, ConstraintSeverity.HIGH, ConstraintSeverity.CRITICAL].index(s)
 
 
-def _dependency_names_for_constraint(category: ConstraintCategory, pm: ProcessModel) -> list[str]:
-    """Which raw system names (if any) a constraint category is actually
-    about, re-derived from the process model rather than the constraint's
-    free-text description. A category not in either set is treated as
-    process-wide (not tied to one external system) — grouped by category
-    alone, not fabricated onto an unrelated system."""
+def _dependency_names_for_constraint(constraint: ConstraintRecord, pm: ProcessModel) -> list[str]:
+    """Which raw system names (if any) a constraint is actually about.
+
+    Prefers the constraint's own `dependency_hint` — set by the
+    recommendation engine at creation time, when it has real per-system
+    evidence (e.g. which specific system's UI automation is brittle) —
+    over reconstructing attribution later from the whole process model. A
+    review caught that the old fallback (every `ui_automation` system in
+    the process) would misattribute a shared blocker to a stable system
+    just because it happened to appear alongside a genuinely brittle one
+    in the same automation. The fallback below only fires for constraints
+    created before this field existed, or categories that never carry a
+    hint because they are genuinely process-wide."""
+    if constraint.dependency_hint:
+        return list(constraint.dependency_hint)
+    category = constraint.category
     if category in _UI_DEPENDENCY_CATEGORIES:
         return [s.name for s in pm.systems if s.interaction_mode == "ui_automation"]
     if category in _ALL_SYSTEMS_CATEGORIES:
@@ -109,7 +119,7 @@ def compute_shared_constraints(automations: Iterable[AutomationFacts], resolve: 
 
     for fact in automations:
         for c in fact.active_constraints:
-            dep_raw_names = _dependency_names_for_constraint(c.category, fact.process_model)
+            dep_raw_names = _dependency_names_for_constraint(c, fact.process_model)
             canonical_names = (
                 [resolve(DependencyKind.SYSTEM, n).canonical_name for n in dep_raw_names] if dep_raw_names else [None]
             )

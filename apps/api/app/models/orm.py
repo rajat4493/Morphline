@@ -44,9 +44,12 @@ class Automation(Base):
 
 class CanonicalDependencyRow(Base):
     """Workspace-scoped identity dictionary (Section: normalization layer).
-    'SAP', 'SAP GUI', 'SAP Production' fold into one row here so the estate
-    graph/shared-constraint/unlock logic reason about *real-world*
-    dependencies, not raw parser strings. See estate/normalize.py."""
+    'SAP', 'SAP GUI' fold into one row here so the estate graph/shared-
+    constraint/unlock logic reasons about *real-world* dependencies, not raw
+    parser strings — but 'SAP PROD' and 'SAP UAT' never fold together: they
+    get separate rows distinguished by `environment`, since a different
+    environment is a different real-world dependency, not cosmetic noise.
+    See estate/normalize.py."""
 
     __tablename__ = "canonical_dependencies"
 
@@ -55,6 +58,7 @@ class CanonicalDependencyRow(Base):
     kind: Mapped[str] = mapped_column(String(20))  # SYSTEM | COMPONENT
     canonical_name: Mapped[str] = mapped_column(String(300))
     normalized_key: Mapped[str] = mapped_column(String(300))
+    environment: Mapped[str | None] = mapped_column(String(20), nullable=True)  # PROD | UAT | TEST | DEV | UNKNOWN | None (COMPONENT)
     aliases: Mapped[list] = mapped_column(JSON, default=list)  # [{raw, confidence, user_confirmed}]
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
@@ -172,6 +176,7 @@ class Constraint(Base):
     source: Mapped[str | None] = mapped_column(String(100), nullable=True)
     autonomy_cap: Mapped[str | None] = mapped_column(String(50), nullable=True)
     resolution_condition: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dependency_hint: Mapped[list] = mapped_column(JSON, default=list)  # raw system name(s) this constraint is specifically about; [] = process-wide
     owner: Mapped[str | None] = mapped_column(String(200), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

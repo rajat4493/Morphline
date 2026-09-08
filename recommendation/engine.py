@@ -42,6 +42,7 @@ from packages.shared.enums import (
 )
 from packages.shared.recommendation_types import ConstraintDraft, RecommendationResult, WhyNotReason
 from packages.shared.scoring_types import DimensionScore, EvidenceType
+from parser.uipath.parse import guess_system_from_selector
 from scoring.dimensions import ExecutionSurfaceProfile, process_has_mutating_authority
 
 _LADDER = list(EvolutionState)
@@ -114,6 +115,21 @@ def determine_ceiling(
     constraints: list[ConstraintDraft] = []
 
     if tool.level == Level.LOW:
+        # Attribute this constraint to the *specific* system(s) whose UI
+        # automation is actually brittle (not encapsulated in a bounded
+        # reusable subprocess) — not every UI-automation system the process
+        # touches. A review caught that estate logic was reconstructing
+        # "which system does this block" later by scanning all
+        # ui_automation systems in the process, which would wrongly blame a
+        # stable, bounded system (e.g. SAP used only inside a reusable
+        # subprocess) for a different, genuinely brittle one (e.g. an
+        # inlined Legacy Portal integration).
+        profile = ExecutionSurfaceProfile(pm)
+        brittle_systems = sorted({
+            guess_system_from_selector(s.selector.raw) or "Unidentified UI Application"
+            for wf in pm.workflows for s in wf.steps
+            if s.selector is not None and wf.file not in profile.bounded_subprocess_files
+        })
         constraints.append(ConstraintDraft(
             category=ConstraintCategory.UNSTABLE_UI_DEPENDENCY,
             description="No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is "
@@ -122,6 +138,7 @@ def determine_ceiling(
             evidence=tool.evidence, severity=ConstraintSeverity.HIGH,
             autonomy_cap=EvolutionState.AUGMENTED_RPA,
             resolution_condition="Wrap the UI automation in a reusable, argument-bound subprocess, or replace it with a stable API/DB/queue integration.",
+            dependency_hint=brittle_systems,
         ))
 
     # Confirmed (HIGH-confidence) risk factors block outright; risk factors

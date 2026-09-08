@@ -26,6 +26,41 @@ from recommendation.engine import recommend
 from scoring.engine import score_process
 
 _OBSERVABILITY_MARKER = "__OBSERVABILITY_OVERRIDE__"
+_FULL_EQUIVALENCE_MARKER = "__FULL_API_EQUIVALENCE__"
+
+# Coarse, explicitly-labeled heuristic for classifying what a UI step
+# *does* — not a real capability-discovery mechanism. Used only to decide
+# whether a simulated "API becomes available" override should touch a given
+# step when the caller has told us which capabilities (READ/WRITE) are
+# actually confirmed available; when the caller gives no capability list at
+# all, every touched step is converted regardless of this classification,
+# but the result is explicitly labeled a "full API-equivalence assumption"
+# (see `_apply_override` below) rather than presented as an informed
+# estimate — a review caught that treating "API becomes available" as
+# "assume a perfect API exists for every UI operation" was silently
+# optimistic and could overstate estate-wide unlock counts.
+_WRITE_KEYWORDS = (
+    "post", "submit", "save", "update", "create", "delete", "remove",
+    "approve", "reject", "send", "pay", "confirm", "type", "write",
+    "upload", "set ", "exclude", "cancel", "edit", "modify",
+)
+_READ_KEYWORDS = (
+    "search", "read", "view", "open", "get ", "select", "lookup", "find",
+    "check", "review", "list", "export", "download",
+)
+
+
+def _infer_step_operation(step) -> str:
+    """'READ' or 'WRITE' — an explicit, coarse heuristic over display name
+    and activity type, not a claim of ground truth. Ambiguous/unmatched
+    steps default to WRITE (the conservative direction: never silently
+    treat an unclassified action as safely read-only)."""
+    text = f"{step.display_name} {step.activity_type}".lower()
+    if any(k in text for k in _WRITE_KEYWORDS):
+        return "WRITE"
+    if any(k in text for k in _READ_KEYWORDS):
+        return "READ"
+    return "WRITE"
 
 
 class SimInput(NamedTuple):
@@ -46,18 +81,46 @@ def _apply_override(pm: ProcessModel, biz: BusinessContext, override: Simulation
 
     if a in (SimulationAssumption.API_AVAILABLE, SimulationAssumption.DEPENDENCY_STABILIZED):
         target_key = normalize_system_key(override.canonical_dependency) if override.canonical_dependency else None
+        allowed_ops = set(override.capabilities) if override.capabilities else None
         changed = 0
+        skipped_uncovered = 0
         for wf in pm.workflows:
             for step in wf.steps:
                 if step.selector is None:
                     continue
                 guessed = guess_system_from_selector(step.selector.raw) or "Unidentified UI Application"
-                if target_key is None or normalize_system_key(guessed) == target_key:
-                    step.selector = None
-                    step.category = NodeCategory.API_TOOL
-                    step.api = ApiCall(label=step.display_name, method="POST", endpoint_hint=f"[SIMULATED] {override.canonical_dependency or guessed} API", workflow=wf.file)
-                    changed += 1
-        notes.append(f"Simulated {changed} UI-automation step(s) against {override.canonical_dependency or 'the target system'} becoming API calls")
+                if target_key is not None and normalize_system_key(guessed) != target_key:
+                    continue
+                op = _infer_step_operation(step)
+                if allowed_ops is not None and op not in allowed_ops:
+                    skipped_uncovered += 1
+                    continue
+                step.selector = None
+                step.category = NodeCategory.API_TOOL
+                step.api = ApiCall(
+                    label=step.display_name, method="GET" if op == "READ" else "POST",
+                    endpoint_hint=f"[SIMULATED] {override.canonical_dependency or guessed} API", workflow=wf.file,
+                )
+                changed += 1
+
+        dep_label = override.canonical_dependency or "the target system"
+        if allowed_ops is None:
+            notes.append(
+                f"Simulated {changed} UI-automation step(s) against {dep_label} becoming API calls "
+                "[FULL API-EQUIVALENCE ASSUMPTION — no confirmed capability coverage was supplied; "
+                "treat this result as an upper bound, not an estimate]"
+            )
+            notes.append(_FULL_EQUIVALENCE_MARKER)
+        else:
+            notes.append(
+                f"Simulated {changed} UI-automation step(s) against {dep_label} becoming API calls "
+                f"(confirmed capability coverage: {', '.join(sorted(allowed_ops))})"
+            )
+            if skipped_uncovered:
+                notes.append(
+                    f"{skipped_uncovered} UI-automation step(s) against {dep_label} left unresolved — "
+                    f"no confirmed API capability covers them"
+                )
 
     elif a == SimulationAssumption.REUSABLE_TOOL_AVAILABLE:
         target_key = normalize_component_key(override.canonical_dependency) if override.canonical_dependency else None
@@ -101,14 +164,25 @@ def _apply_override(pm: ProcessModel, biz: BusinessContext, override: Simulation
 
 def simulate_automation(
     pm: ProcessModel, biz: BusinessContext, overrides: list[SimulationOverride]
-) -> tuple[RecommendationResult, dict[str, DimensionScore], list[str]]:
+) -> tuple[RecommendationResult, dict[str, DimensionScore], list[str], bool]:
+    """Returns (recommendation, scores, notes, used_full_api_equivalence).
+    The last element is True if any override in this scenario simulated
+    "API available" without a confirmed capability list — callers must
+    treat that result as an unverified upper bound, not a point estimate
+    (see `run_simulation`, which folds this into `unresolved_factors` so
+    unlock-analysis confidence is never HIGH/MEDIUM on an unlabeled
+    full-equivalence assumption)."""
     all_notes: list[str] = []
     observability_override = False
+    full_equivalence_used = False
     for ov in overrides:
         pm, biz, notes = _apply_override(pm, biz, ov)
         if _OBSERVABILITY_MARKER in notes:
             observability_override = True
             notes = [n for n in notes if n != _OBSERVABILITY_MARKER]
+        if _FULL_EQUIVALENCE_MARKER in notes:
+            full_equivalence_used = True
+            notes = [n for n in notes if n != _FULL_EQUIVALENCE_MARKER]
         all_notes.extend(notes)
 
     scores = score_process(pm, biz)
@@ -123,7 +197,7 @@ def simulate_automation(
         all_notes.append("Simulated: observability -> HIGH")
 
     rec = recommend(pm, scores, biz)
-    return rec, scores, all_notes
+    return rec, scores, all_notes, full_equivalence_used
 
 
 def run_simulation(scenario: SimulationScenario, inputs: list[SimInput]) -> SimulationResult:
@@ -134,7 +208,9 @@ def run_simulation(scenario: SimulationScenario, inputs: list[SimInput]) -> Simu
     unresolved: list[str] = []
 
     for sim_input in targets:
-        rec, _scores, notes = simulate_automation(sim_input.process_model, sim_input.business_context, scenario.overrides)
+        rec, _scores, notes, full_equivalence_used = simulate_automation(
+            sim_input.process_model, sim_input.business_context, scenario.overrides
+        )
         assumptions.extend(n for n in notes if n not in assumptions)
 
         before = sim_input.current_recommendation
@@ -150,6 +226,13 @@ def run_simulation(scenario: SimulationScenario, inputs: list[SimInput]) -> Simu
                 note = f"{sim_input.name}: {m}"
                 if note not in unresolved:
                     unresolved.append(note)
+        if full_equivalence_used:
+            note = (
+                f"{sim_input.name}: this result relies on a full API-equivalence assumption with no "
+                "confirmed capability coverage — treat as an upper bound, not a point estimate"
+            )
+            if note not in unresolved:
+                unresolved.append(note)
 
     unlock_count = sum(1 for r in results if r.changed and _rank(r.simulated_state) > _rank(r.current_state))
     unchanged_count = sum(1 for r in results if not r.changed)

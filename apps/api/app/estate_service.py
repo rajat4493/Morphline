@@ -91,7 +91,8 @@ def to_sim_inputs(snapshots: list[AutomationSnapshot]) -> list[SimInput]:
 def _row_to_dependency(row: orm.CanonicalDependencyRow) -> CanonicalDependency:
     return CanonicalDependency(
         id=row.id, kind=DependencyKind(row.kind), canonical_name=row.canonical_name,
-        normalized_key=row.normalized_key, aliases=[AliasMapping.model_validate(a) for a in row.aliases],
+        normalized_key=row.normalized_key, environment=row.environment,
+        aliases=[AliasMapping.model_validate(a) for a in row.aliases],
     )
 
 
@@ -115,7 +116,8 @@ def make_resolver(db: Session, workspace_id: int):
             cache.append(dep)
             row = orm.CanonicalDependencyRow(
                 workspace_id=workspace_id, kind=dep.kind.value, canonical_name=dep.canonical_name,
-                normalized_key=dep.normalized_key, aliases=[a.model_dump(mode="json") for a in dep.aliases],
+                normalized_key=dep.normalized_key, environment=dep.environment,
+                aliases=[a.model_dump(mode="json") for a in dep.aliases],
             )
             db.add(row)
             db.flush()

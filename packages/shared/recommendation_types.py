@@ -29,6 +29,16 @@ class ConstraintDraft(BaseModel):
     # What would need to become true for this to resolve — shown to an
     # architect a year later (Section 15 / TheDuck Q8).
     resolution_condition: Optional[str] = None
+    # Raw system name(s) this specific constraint is actually about (e.g.
+    # ["Legacy Portal"], not every UI-automation system the process touches)
+    # — set at creation time by the recommendation engine, which has the
+    # real per-system evidence, rather than reconstructed later by estate
+    # logic scanning "every UI-automation system in the process" and
+    # potentially blaming a stable system for a different, brittle one's
+    # constraint (a review caught this exact false-attribution risk).
+    # Empty means this constraint is genuinely process-wide (e.g.
+    # HIGH_BLAST_RADIUS, ARCHITECTURE_LIMITATION), not tied to one system.
+    dependency_hint: list[str] = Field(default_factory=list)
 
 
 class WhyNotReason(BaseModel):

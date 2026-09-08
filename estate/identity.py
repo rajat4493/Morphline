@@ -9,12 +9,15 @@ from __future__ import annotations
 
 from packages.shared.enums import Confidence
 from packages.shared.estate_types import AliasMapping, CanonicalDependency, DependencyKind
-from estate.normalize import normalize_component_key, normalize_system_key
+from estate.normalize import extract_environment, normalize_component_key, normalize_dependency_key
 
 
 def normalized_key_for(kind: DependencyKind, raw_name: str) -> str:
+    """The merge key used for identity resolution. For SYSTEM this includes
+    environment (see estate/normalize.py) so 'SAP PROD' and 'SAP UAT' never
+    fold together even though both clean to 'sap'."""
     if kind == DependencyKind.SYSTEM:
-        return normalize_system_key(raw_name)
+        return normalize_dependency_key(raw_name)
     return normalize_component_key(raw_name)
 
 
@@ -45,6 +48,7 @@ def resolve(
         kind=kind,
         canonical_name=raw_name,
         normalized_key=key,
+        environment=extract_environment(raw_name) if kind == DependencyKind.SYSTEM else None,
         aliases=[AliasMapping(raw=raw_name, confidence=Confidence.KNOWN, user_confirmed=True)],
     )
     return new_dep, True, True

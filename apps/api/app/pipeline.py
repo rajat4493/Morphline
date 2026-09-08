@@ -72,6 +72,7 @@ def _constraint_record_from_row(c: orm.Constraint) -> ConstraintRecord:
         resolution_condition=c.resolution_condition, owner=c.owner,
         created_at=c.created_at, first_seen=c.created_at, last_seen=c.last_seen_at,
         resolved_at=c.resolved_at, resolution_notes=c.resolution_notes,
+        dependency_hint=list(c.dependency_hint or []),
     )
 
 
@@ -189,6 +190,7 @@ def _score_and_persist_assessment(
             severity=draft.severity.value, status=ConstraintStatus.ACTIVE.value,
             autonomy_cap=draft.autonomy_cap.value if draft.autonomy_cap else None,
             resolution_condition=draft.resolution_condition,
+            dependency_hint=list(draft.dependency_hint),
             last_seen_at=now,
         ))
     for transitioned in to_transition:
@@ -215,6 +217,7 @@ def _score_and_persist_assessment(
                 row.severity = draft.severity.value
                 row.autonomy_cap = draft.autonomy_cap.value if draft.autonomy_cap else None
                 row.resolution_condition = draft.resolution_condition
+                row.dependency_hint = list(draft.dependency_hint)
                 row.last_seen_at = now
 
     if previous_snapshot is None:
@@ -224,7 +227,7 @@ def _score_and_persist_assessment(
         current_snapshot = AssessmentSnapshot(
             assessment_id=assessment.id, dimensions=scores, recommendation=rec_result, business_context=biz,
             active_constraints=[
-                ConstraintRecord(category=c.category, description=c.description, evidence=c.evidence, severity=c.severity)
+                ConstraintRecord(category=c.category, description=c.description, evidence=c.evidence, severity=c.severity, dependency_hint=c.dependency_hint)
                 for c in rec_result.constraints
             ],
         )

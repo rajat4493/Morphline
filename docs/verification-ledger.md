@@ -7,22 +7,89 @@ check), **TESTED** (automated test only), **MANUAL-ONLY** (smoke-tested via
 curl/script, no automated test yet), **PARTIAL** (built but with a known
 gap), **NOT BUILT**.
 
+## Correction sprint (post-review)
+
+An external review of commit `2c09efe` found two P0 correctness issues and
+two P1 issues in the estate backend before it should be trusted. All four
+were fixed in this sprint, each with a regression test proving the specific
+failure mode the review described:
+
+1. **P0 — canonical normalization could silently merge different
+   environments.** `normalize_system_key` stripped "production"/"uat"/
+   "test"/"dev" as noise, so "SAP PROD" and "SAP UAT" collapsed onto one
+   canonical dependency — a real violation of "never silently merge
+   ambiguous dependencies," since an unlock claim against PROD could
+   silently include automations pointed at UAT/DEV. Fixed: environment is
+   now extracted into its own field (`CanonicalDependency.environment`:
+   PROD/UAT/TEST/DEV/UNKNOWN) and folded into the merge key
+   (`estate/normalize.py::normalize_dependency_key`), so two names only
+   merge automatically when both the cleaned name AND the environment
+   agree. See §1 below.
+2. **P0 — API-available simulation assumed a perfect API for every UI
+   step, unlabeled.** `_apply_override` converted every UI-automation step
+   touching the target system into a `POST` API call regardless of what
+   the step did, and unlock analysis used this to compute estate-wide
+   unlock counts — an unstated "assume full functional API replacement"
+   framed as a confirmed capability. Fixed: `SimulationOverride.capabilities`
+   lets a caller state which operations (READ/WRITE) are actually
+   confirmed; a coarse heuristic classifies each step so only matching
+   steps convert (with `GET`/`POST` chosen by classification, not always
+   `POST`); when no capability list is given, the simulation still runs
+   but is explicitly labeled a "FULL API-EQUIVALENCE ASSUMPTION" and
+   folded into `unresolved_factors`, which forces unlock confidence to
+   LOW. See §5 below.
+3. **P1 — shared-constraint attribution could blame the wrong system.**
+   `UNSTABLE_UI_DEPENDENCY` was attributed to every `ui_automation` system
+   the process touched, so a bot with one stable (bounded-subprocess)
+   system and one genuinely brittle one could make estate logic blame the
+   stable one. Fixed: `ConstraintDraft`/`ConstraintRecord` now carry a
+   `dependency_hint` set by the recommendation engine at creation time
+   (the specific brittle system(s), derived from real per-step evidence),
+   which `estate/graph.py` prefers over its old whole-process
+   reconstruction. See §3 below.
+4. **P1 — `estimated_value` conflated technical leverage with business
+   value.** Ranking purely on "unlocked / affected" made "unlocks 12 tiny
+   bots" outrank "unlocks 2 processes worth £500M" as if they were the
+   same kind of win. Renamed to `unlock_leverage` (+ `leverage_is_unknown`)
+   with a docstring stating the intended future formula (`unlock_leverage
+   × business_importance × feasibility × confidence`) once Business
+   Context carries a real criticality signal — not implemented, since no
+   such signal exists yet to multiply by. See §4 below.
+
+All four fixes are covered by dedicated tests in `tests/test_estate.py`
+(`test_normalization_never_merges_different_environments`,
+`test_simulation_labels_full_api_equivalence_and_lowers_confidence`,
+`test_simulation_capability_limited_does_not_convert_uncovered_operations`,
+`test_simulation_full_equivalence_converts_more_steps_than_capability_limited`,
+`test_unstable_ui_dependency_constraint_names_only_the_brittle_system`,
+`test_unlock_opportunity_reports_leverage_not_business_value`). Full suite:
+**85 passed, 0 failed** (up from 79 before this sprint), no existing test
+weakened.
+
 ## 1. Canonical identity / normalization
 
 - **Requirement**: fold different raw names for the same system/component
   into one canonical identity deterministically; never silently merge
-  genuinely ambiguous ones.
-- **Implementation**: `estate/normalize.py`, `estate/identity.py`,
-  `CanonicalDependencyRow` (`apps/api/app/models/orm.py`).
-- **Test evidence**: `tests/test_estate.py::test_normalization_folds_aliases_without_silent_ambiguous_merge`.
+  genuinely ambiguous ones — including different environments of the same
+  system (PROD/UAT/TEST/DEV are different real-world dependencies, not
+  cosmetic variants).
+- **Implementation**: `estate/normalize.py` (now with `extract_environment`
+  and `normalize_dependency_key`), `estate/identity.py`,
+  `CanonicalDependencyRow` (`apps/api/app/models/orm.py`, now with an
+  `environment` column).
+- **Test evidence**: `tests/test_estate.py::test_normalization_folds_aliases_without_silent_ambiguous_merge`,
+  `test_normalization_never_merges_different_environments` (added in the
+  correction sprint — proves PROD/UAT/DEV/unspecified each get their own
+  canonical dependency, while repeated references to the *same*
+  environment still fold together).
 - **Manual evidence**: live API smoke test — `GET /workspaces/1/canonical-dependencies`
-  showed Excel/SAP entries each with one confirmed alias after seeding 8
-  sample automations.
+  showed Excel/SAP entries each with one confirmed alias and an
+  `environment` field after seeding 8 sample automations.
 - **Status**: VERIFIED.
 - **Unresolved limitation**: no fixture yet deliberately varies raw names
   across automations (e.g. "SAP" in one, "SAP Production" in another) to
   prove cross-automation folding beyond the identical-string case; the
-  identity-layer unit test covers this directly, but no end-to-end fixture
+  identity-layer unit tests cover this directly, but no end-to-end fixture
   does.
 
 ## 2. Estate graph (system / component / constraint / state clustering)
@@ -45,39 +112,70 @@ gap), **NOT BUILT**.
 - **Requirement**: group identical underlying constraints across
   automations into one estate-level fact, attributed to the real canonical
   dependency (mechanically, not by string-matching free text).
-- **Implementation**: `estate/graph.py::compute_shared_constraints`.
+- **Implementation**: `estate/graph.py::compute_shared_constraints`, now
+  preferring `ConstraintRecord.dependency_hint` (set at creation time in
+  `recommendation/engine.py::determine_ceiling`) over reconstructing
+  attribution from every `ui_automation` system in the process.
 - **Test evidence**: `test_case_a_shared_ui_dependency_detected_as_one_estate_constraint`,
-  `test_case_h_no_shared_dependency_yields_no_estate_opportunity`.
+  `test_case_h_no_shared_dependency_yields_no_estate_opportunity`,
+  `test_unstable_ui_dependency_constraint_names_only_the_brittle_system`
+  (correction sprint — a synthetic bot with one stable, bounded-subprocess
+  system and one genuinely brittle inline system proves the constraint
+  names only the brittle one).
 - **Manual evidence**: live `GET /estate/shared-constraints` against 8 seeded
   automations — correctly grouped POOR_REVERSIBILITY (3), INSUFFICIENT_BUSINESS_CONTEXT
-  (3), COMPLIANCE_RESTRICTION (2), WEAK_OBSERVABILITY (2), and a SAP-specific
-  UNSTABLE_UI_DEPENDENCY bucket.
+  (3), COMPLIANCE_RESTRICTION (2), WEAK_OBSERVABILITY (2), and split
+  UNSTABLE_UI_DEPENDENCY into per-system buckets (one specifically
+  attributed to "SAP", confirming the fix actually changes real output,
+  not just the synthetic test).
 - **Status**: VERIFIED.
 
 ## 4. Unlock analysis
 
 - **Requirement**: "if I fix one thing, what does it unlock?" — never
-  invent monetary value; LOW/MEDIUM/HIGH/unknown only.
+  invent monetary value; LOW/MEDIUM/HIGH/unknown only; must not conflate
+  technical leverage with business value.
 - **Implementation**: `estate/unlock.py::compute_unlock_opportunities`.
 - **Test evidence**: `test_case_c_shared_constraint_produces_unlock_opportunity_across_bots`,
   `test_case_f_unknown_business_context_reduces_confidence_not_estimate`,
-  `test_modernization_priorities_ranked_without_fabricated_monetary_value`.
+  `test_modernization_priorities_ranked_without_fabricated_monetary_value`,
+  `test_unlock_opportunity_reports_leverage_not_business_value` (correction
+  sprint — asserts the field is named/framed as `unlock_leverage`, not
+  `estimated_value`).
 - **Manual evidence**: live `GET /estate/unlock-opportunities` — correctly
   showed 0 unlock for a POOR_REVERSIBILITY-only fix when other blockers
   remain on the same automations (real-data confirmation of Case E logic).
-- **Status**: VERIFIED. `estimated_value` is provably never a fabricated
+- **Status**: VERIFIED. `unlock_leverage` (renamed from `estimated_value` in
+  the correction sprint, since a review pointed out the old name implied
+  business value it doesn't measure) is provably never a fabricated
   number — it is `Level.LOW/MEDIUM/HIGH` derived from `result.unlock_count`,
-  or `value_is_unknown=True` when `affected_count == 0`.
+  or `leverage_is_unknown=True` when `affected_count == 0`. Modernization
+  Priority still ranks on leverage alone — the intended
+  `leverage × business_importance × feasibility × confidence` formula is
+  documented but not implemented, since Business Context carries no
+  criticality/value signal yet to multiply by.
 
 ## 5. What-if simulation
 
 - **Requirement**: never mutate real stored constraints; never mark a
   constraint resolved because the user simulated it; must run through the
-  real scoring/recommendation engines, not a parallel shortcut.
-- **Implementation**: `estate/simulation.py`.
+  real scoring/recommendation engines, not a parallel shortcut; "API
+  becomes available" must not silently assume a perfect API for every UI
+  operation the bot performs.
+- **Implementation**: `estate/simulation.py`, now with
+  `SimulationOverride.capabilities` (confirmed READ/WRITE coverage) and an
+  explicit "FULL API-EQUIVALENCE ASSUMPTION" label + forced-LOW-confidence
+  path when no capability list is given.
 - **Test evidence**: `test_case_d_simulation_never_mutates_real_stored_state`,
   `test_case_d2_simulation_isolated_across_repeated_runs`,
-  `test_case_e_partial_fix_does_not_overstate_unlock`.
+  `test_case_e_partial_fix_does_not_overstate_unlock`,
+  `test_simulation_labels_full_api_equivalence_and_lowers_confidence`,
+  `test_simulation_capability_limited_does_not_convert_uncovered_operations`,
+  `test_simulation_full_equivalence_converts_more_steps_than_capability_limited`
+  (correction sprint — proves capability-limited simulation leaves
+  uncovered steps as unresolved brittle UI rather than converting
+  everything, and that the unlabeled full-equivalence path is a strictly
+  larger, explicitly-flagged upper bound rather than a silent default).
 - **Manual evidence**: manual before/after comparison on `customer_exclusion`
   proved `model_copy(deep=True)` isolation, and that a full set of overrides
   correctly unlocks `HIGH_AUTONOMY_AGENT` while a partial set does not.
@@ -213,7 +311,9 @@ gap), **NOT BUILT**.
 | 11 | Estate frontend views | NOT BUILT |
 | 12 | LLM estate-level tasks | NOT BUILT |
 
-Test count at end of phase: **79 passing** (63 pre-existing + 16 new: 11 in
-`tests/test_estate.py`, 1 in the same file for Execution Surface Profile,
-4 in `tests/test_flow_readability.py`). No pre-existing test was modified or
-weakened.
+Test count at end of the initial estate phase: 79 passing (63 pre-existing +
+16 new). Test count at end of the post-review correction sprint: **85
+passing, 0 failed** (+6 new tests proving the four review findings above are
+actually fixed: environment-separation, capability-aware/labeled
+simulation ×3, constraint provenance, leverage-vs-value naming). No
+pre-existing test was modified or weakened at either point.

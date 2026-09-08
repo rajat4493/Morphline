@@ -341,12 +341,82 @@ assumed-working.
 *(Update the section below at the end of this phase with the final
 verified state before ending the session.)*
 
+## Post-review correction sprint (read this first if you're picking up after §"Current task")
+
+An external review of the estate phase's first commit (`2c09efe`) found two
+P0 correctness issues and two P1 issues before the backend should be
+trusted. All four are now fixed, each with a dedicated regression test:
+
+1. **P0 — normalization could silently merge PROD/UAT/DEV.**
+   `normalize_system_key` used to strip "production"/"uat"/"test"/"dev" as
+   cosmetic noise, so "SAP PROD" and "SAP UAT" collapsed onto one canonical
+   dependency — a real instance of the "never silently merge ambiguous
+   dependencies" rule being violated by the phase's own normalization
+   layer. **Fixed**: `estate/normalize.py::extract_environment` +
+   `normalize_dependency_key` now keep environment as its own field
+   (`CanonicalDependency.environment`) folded into the merge key, so two
+   names only merge automatically when both the cleaned name AND the
+   environment agree. A bare name with no environment marker gets its own
+   UNKNOWN bucket rather than being assumed to mean PROD.
+2. **P0 — "API becomes available" assumed a perfect API for every UI
+   step, unlabeled.** The simulator converted every UI step touching the
+   target system into a `POST` call regardless of what it did (Click
+   Login, Type Username, Read Customer — all became identical "POST API"
+   calls), and unlock analysis used this to compute estate-wide unlock
+   counts. That's "assume full functional API replacement," not "API
+   becomes available," and it was never labeled as such. **Fixed**:
+   `SimulationOverride.capabilities` lets a caller state which operations
+   (READ/WRITE) are actually confirmed; only matching steps convert
+   (method is `GET`/`POST` based on classification, not always `POST`).
+   With no capability list, the simulation still runs but is explicitly
+   labeled `[FULL API-EQUIVALENCE ASSUMPTION]` and folded into
+   `unresolved_factors`, which forces unlock confidence to LOW — so an
+   un-confirmed assumption can never produce a MEDIUM/HIGH-confidence
+   unlock number.
+3. **P1 — shared-constraint attribution could blame the wrong system.**
+   `UNSTABLE_UI_DEPENDENCY` used to be attributed to *every*
+   `ui_automation` system a process touched, reconstructed after the fact
+   from the whole process model. A bot with one stable (bounded-subprocess)
+   system and one genuinely brittle inline system could make estate logic
+   conclude the stable one was the blocker. **Fixed**: `ConstraintDraft`/
+   `ConstraintRecord` now carry `dependency_hint`, set by
+   `recommendation/engine.py::determine_ceiling` at creation time from real
+   per-step evidence (which systems are actually touched by *brittle*,
+   non-bounded UI steps) — `estate/graph.py` prefers this over
+   reconstructing attribution later.
+4. **P1 — `estimated_value` conflated technical leverage with business
+   value.** Ranking purely on "unlocked / affected" ranked "unlocks 12 tiny
+   bots" above "unlocks 2 processes worth £500M" as the same kind of win.
+   **Fixed**: renamed to `unlock_leverage` (+ `leverage_is_unknown`), with
+   the intended future formula documented (`unlock_leverage ×
+   business_importance × feasibility × confidence`) but not implemented,
+   since Business Context has no criticality/value signal yet to multiply
+   by — ranking still uses leverage alone, now honestly named.
+
+New tests: `test_normalization_never_merges_different_environments`,
+`test_simulation_labels_full_api_equivalence_and_lowers_confidence`,
+`test_simulation_capability_limited_does_not_convert_uncovered_operations`,
+`test_simulation_full_equivalence_converts_more_steps_than_capability_limited`,
+`test_unstable_ui_dependency_constraint_names_only_the_brittle_system`,
+`test_unlock_opportunity_reports_leverage_not_business_value` — all in
+`tests/test_estate.py`. Schema changed: `CanonicalDependencyRow` gained an
+`environment` column, `Constraint` gained a `dependency_hint` column — a
+fresh `morphline.db` (or a real migration, not yet written) is required;
+this repo has no migration framework yet, so the dev flow is
+`rm morphline.db && python -m apps.api.scripts.seed_samples`.
+
+The reviewer's remaining open items — estate frontend views, estate-level
+LLM tasks, `docs/UAT.md` estate section, `docs/decisions.md` entries — are
+still not built; see "What was deliberately deferred" below, unchanged by
+this sprint.
+
 ## End-of-phase status
 
 - Final commit hash: see `git log` head on `claude/new-session-ekr17k` —
   the commit adding this update is the last one of this phase.
-- Final test count: **79 passed**, 0 failed (`pytest -q` from repo root;
-  started this phase at 63). 16 new tests, 0 existing tests modified.
+- Final test count: **85 passed**, 0 failed (`pytest -q` from repo root;
+  started this phase at 63, was 79 before the correction sprint above).
+  22 new tests total, 0 existing tests modified.
 - Verification ledger status: see `docs/verification-ledger.md`. Summary:
   8 capabilities VERIFIED, 1 MANUAL-ONLY (environment memory has no
   automated test yet), 1 PARTIAL (reusable-tool detection — the estate-level
@@ -452,3 +522,47 @@ verified state before ending the session.)*
   a VERIFIED row in the ledger and build on it; it cannot trust an
   unverified claim of completeness. Say what wasn't built, plainly, rather
   than implying more coverage than exists.
+
+### TheDuck learning added in the post-review correction sprint
+
+- A "VERIFIED" row in the ledger means the tests pass, not that the tests
+  asked the right question. Every fixed issue this sprint had *passing*
+  tests before the fix — the tests were checking that the mechanism ran,
+  not that its output was trustworthy (e.g. "normalization folds these
+  three strings together" was tested and true; "normalization never folds
+  strings that shouldn't be together" was never asked). Write the
+  adversarial test — "what should this *never* do" — not just the happy
+  path, especially for anything the product will use to make a claim to a
+  user (an unlock count, a blocked-automation count).
+- "Deterministic" and "safe to auto-merge" are not the same property. A
+  rule can be perfectly deterministic (same input always produces the same
+  normalized key) while still being *wrong to apply automatically* — the
+  PROD/UAT/DEV bug was 100% deterministic and 100% a violation of "never
+  silently merge ambiguous dependencies." Determinism is necessary for an
+  auto-merge rule to be trustworthy, but it says nothing about whether the
+  two things being merged are actually the same real-world entity.
+- A simulation "assumption" needs a visible confidence label the moment it
+  stops being a structural fact and starts being a guess about scope. Deep
+  copy + re-running the real engine (built correctly last phase) guarantees
+  a simulation can't diverge from reality *mechanically* — it says nothing
+  about whether the assumption fed into it was itself honest. "API becomes
+  available" is a structural fact about connectivity; "this API covers
+  every operation the bot currently performs via UI" is a scope guess, and
+  conflating the two is exactly how a technically-correct simulation
+  produces a business-misleading number.
+- Attribute a fact at the moment you have the most evidence to attribute it
+  correctly, not later by re-deriving it from a coarser signal. The
+  recommendation engine has per-step, per-selector evidence about *which*
+  system is brittle when it creates a constraint; estate logic, working
+  only from the constraint's category and the whole process model, cannot
+  recover that specificity without over-attributing. `dependency_hint` is
+  the general pattern: carry the narrow fact forward as a field, don't make
+  a downstream consumer reconstruct it from broader context.
+- Name a field for what it actually measures, not for what you hope it
+  will eventually measure. `estimated_value` invited every future caller
+  (including a future agent) to treat "12 automations move up one state"
+  as commensurable with "2 automations move up one state, one of them a
+  £500M process" — the two are not comparable without a real business
+  criticality input that doesn't exist yet. `unlock_leverage` names the
+  thing actually computed; the docstring, not the field name, is where the
+  aspirational future formula belongs.

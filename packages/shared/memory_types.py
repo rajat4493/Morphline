@@ -28,6 +28,10 @@ class ConstraintRecord(BaseModel):
     last_seen: Optional[datetime] = None
     resolved_at: Optional[datetime] = None
     resolution_notes: Optional[str] = None
+    # Carried through from ConstraintDraft.dependency_hint — see there for
+    # why estate logic must prefer this over re-deriving attribution from
+    # the whole process model.
+    dependency_hint: list[str] = Field(default_factory=list)
 
 
 class AssessmentSnapshot(BaseModel):

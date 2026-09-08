@@ -221,6 +221,26 @@ def test_case_h_no_shared_dependency_yields_no_estate_opportunity():
     assert len(multi_bot_opportunities) <= len(multi_bot_shared)
 
 
+def test_unlock_opportunity_reports_leverage_not_business_value():
+    """P1 regression: the field must be named/framed as technical leverage,
+    not business value — ranking on raw unlock counts conflates 'unlocks
+    12 tiny bots' with 'unlocks 2 processes worth £500M,' which the model
+    has no basis to distinguish without real Business Context criticality
+    data. Asserts the renamed field exists and still never fabricates a
+    number when nothing was actually affected."""
+    resolve, _reg = _make_resolver()
+    a1, s1 = _facts(1, "Customer Exclusion A", "customer_exclusion")
+    shared = compute_shared_constraints([a1], resolve)
+    opportunities = compute_unlock_opportunities(shared, {1: s1})
+    assert opportunities
+    for o in opportunities:
+        assert hasattr(o, "unlock_leverage")
+        assert not hasattr(o, "estimated_value")
+        assert o.unlock_leverage.value in {"LOW", "MEDIUM", "HIGH"}
+        if o.affected_count == 0:
+            assert o.leverage_is_unknown
+
+
 def test_modernization_priorities_ranked_without_fabricated_monetary_value():
     resolve, _reg = _make_resolver()
     a1, s1 = _facts(1, "Customer Exclusion A", "customer_exclusion")
@@ -232,6 +252,124 @@ def test_modernization_priorities_ranked_without_fabricated_monetary_value():
     for i, p in enumerate(priorities, start=1):
         assert p.rank == i
         assert p.priority.value in {"LOW", "MEDIUM", "HIGH", "UNKNOWN"}
+
+
+def test_unstable_ui_dependency_constraint_names_only_the_brittle_system():
+    """P1 regression: a bot with one stable (bounded-subprocess) system and
+    one genuinely brittle (inline) system must attribute its
+    UNSTABLE_UI_DEPENDENCY constraint to the brittle system only — not to
+    every UI-automation system the process happens to touch. Reproduces
+    the reviewer's exact scenario: 'Bot A: SAP UI (stable) + Legacy Portal
+    UI (brittle)' must never let estate logic conclude 'SAP blocks this
+    bot' when SAP is the one that's actually safe."""
+    from packages.shared.canonical import Argument, ProcessModel, Selector, Step, System, Workflow
+    from packages.shared.enums import Confidence, NodeCategory
+    from recommendation.engine import recommend
+    from scoring.engine import score_process
+
+    pm = ProcessModel(
+        project_name="Mixed UI Stability Bot",
+        entry_point="Main.xaml",
+        systems=[
+            System(name="SAP", interaction_mode="ui_automation"),
+            System(name="Unidentified UI Application", interaction_mode="ui_automation"),
+        ],
+        workflows=[
+            Workflow(
+                file="Main.xaml", display_name="Main", is_entry_point=True,
+                invokes=["SapLookup.xaml"],
+                steps=[
+                    Step(id="s1", display_name="Click Legacy Portal Search", activity_type="Click",
+                         category=NodeCategory.DETERMINISTIC, confidence=Confidence.KNOWN,
+                         selector=Selector(raw="<wnd app='legacyportal.exe' /><ctrl name='Search' />"), next=["s1b"]),
+                    Step(id="s1b", display_name="Type Legacy Portal Query", activity_type="TypeInto",
+                         category=NodeCategory.DETERMINISTIC, confidence=Confidence.KNOWN,
+                         selector=Selector(raw="<wnd app='legacyportal.exe' /><ctrl name='QueryField' />"), next=["s1c"]),
+                    Step(id="s1c", display_name="Click Legacy Portal Submit", activity_type="Click",
+                         category=NodeCategory.DETERMINISTIC, confidence=Confidence.KNOWN,
+                         selector=Selector(raw="<wnd app='legacyportal.exe' /><ctrl name='Submit' />"), next=["s2"]),
+                    Step(id="s2", display_name="Invoke SAP Lookup", activity_type="InvokeWorkflowFile",
+                         category=NodeCategory.DETERMINISTIC, confidence=Confidence.KNOWN,
+                         invoked_workflow="SapLookup.xaml"),
+                ],
+            ),
+            Workflow(
+                file="SapLookup.xaml", display_name="Sap Lookup",
+                arguments=[Argument(name="accountId", direction="In")],
+                steps=[
+                    Step(id="s1", display_name="Click SAP Account Tab", activity_type="Click",
+                         category=NodeCategory.DETERMINISTIC, confidence=Confidence.KNOWN,
+                         selector=Selector(raw="<wnd app='sap.exe' /><ctrl name='AccountTab' />")),
+                ],
+            ),
+        ],
+    )
+    scores = score_process(pm, None)
+    rec = recommend(pm, scores, None)
+
+    ui_constraint = next((c for c in rec.constraints if c.category == ConstraintCategory.UNSTABLE_UI_DEPENDENCY), None)
+    assert ui_constraint is not None, "expected the mixed-stability process to still trip UNSTABLE_UI_DEPENDENCY"
+    assert "Unidentified UI Application" in ui_constraint.dependency_hint
+    assert "SAP" not in ui_constraint.dependency_hint
+
+
+def test_simulation_labels_full_api_equivalence_and_lowers_confidence():
+    """P0 regression: simulating 'API becomes available' with no confirmed
+    capability list must be explicitly labeled a full-equivalence
+    assumption (not presented as a neutral fact) and must reduce unlock
+    confidence, since it converts every touched UI step regardless of what
+    that step actually does."""
+    resolve, _reg = _make_resolver()
+    a1, s1 = _facts(1, "Invoice Processing", "invoice_processing")
+
+    shared = compute_shared_constraints([a1], resolve)
+    ui_constraint = next(s for s in shared if s.category == ConstraintCategory.UNSTABLE_UI_DEPENDENCY)
+    opportunities = compute_unlock_opportunities([ui_constraint], {1: s1})
+    assert opportunities
+    opp = opportunities[0]
+    assert any("FULL API-EQUIVALENCE ASSUMPTION" in a for a in opp.assumptions)
+    assert opp.confidence.value == "LOW"
+
+
+def test_simulation_capability_limited_does_not_convert_uncovered_operations():
+    """A capability-limited simulation (e.g. only READ confirmed available)
+    must leave steps outside that capability as unresolved brittle UI
+    rather than silently converting them to API calls."""
+    pm, rec = _assess("invoice_processing")
+    biz = BusinessContext()
+    sim_input = SimInput(automation_id=1, name="Invoice Processing", process_model=pm, business_context=biz, current_recommendation=rec)
+
+    scenario = SimulationScenario(
+        name="read-only capability",
+        overrides=[SimulationOverride(assumption=SimulationAssumption.API_AVAILABLE, canonical_dependency="SAP", capabilities=["READ"])],
+    )
+    result = run_simulation(scenario, [sim_input])
+    assert any("confirmed capability coverage: READ" in a for a in result.assumptions)
+    assert not any("FULL API-EQUIVALENCE" in a for a in result.assumptions)
+    assert any("left unresolved" in a for a in result.assumptions)
+
+
+def test_simulation_full_equivalence_converts_more_steps_than_capability_limited():
+    """The unlabeled full-equivalence path must never be silently equal to
+    (or narrower than) a capability-limited one — it is deliberately the
+    upper bound the review flagged as overly optimistic, and this asserts
+    it actually behaves as a strictly larger conversion, never confused
+    with a verified capability match."""
+    pm, rec = _assess("invoice_processing")
+    biz = BusinessContext()
+    sim_input = SimInput(automation_id=1, name="Invoice Processing", process_model=pm, business_context=biz, current_recommendation=rec)
+
+    full = run_simulation(
+        SimulationScenario(name="full", overrides=[SimulationOverride(assumption=SimulationAssumption.API_AVAILABLE, canonical_dependency="SAP")]),
+        [sim_input],
+    )
+    read_only = run_simulation(
+        SimulationScenario(name="read-only", overrides=[SimulationOverride(assumption=SimulationAssumption.API_AVAILABLE, canonical_dependency="SAP", capabilities=["READ"])]),
+        [sim_input],
+    )
+    full_converted = int(full.assumptions[0].split("Simulated ")[1].split(" UI-automation")[0])
+    read_converted = int(read_only.assumptions[0].split("Simulated ")[1].split(" UI-automation")[0])
+    assert full_converted >= read_converted
 
 
 def test_execution_surface_profile_distinguishes_bounded_ui_from_brittle_ui():
@@ -256,8 +394,32 @@ def test_normalization_folds_aliases_without_silent_ambiguous_merge():
     resolve, _reg = _make_resolver()
     dep1 = resolve(DependencyKind.SYSTEM, "SAP")
     dep2 = resolve(DependencyKind.SYSTEM, "SAP GUI")
-    dep3 = resolve(DependencyKind.SYSTEM, "SAP Production")
-    assert dep1.id == dep2.id == dep3.id, "expected deterministic noise-token folding to merge these into one canonical dependency"
+    assert dep1.id == dep2.id, "expected deterministic cosmetic-noise folding ('GUI') to merge these"
 
     dep4 = resolve(DependencyKind.SYSTEM, "Salesforce")
     assert dep4.id != dep1.id, "genuinely different systems must never be auto-merged"
+
+
+def test_normalization_never_merges_different_environments():
+    """P0 regression: 'SAP PROD', 'SAP UAT', and 'SAP DEV' are different
+    real-world dependencies (different tenants/data/change-control) and
+    must never silently fold into one canonical dependency just because
+    they clean to the same system name."""
+    resolve, _reg = _make_resolver()
+    prod = resolve(DependencyKind.SYSTEM, "SAP Production")
+    uat = resolve(DependencyKind.SYSTEM, "SAP UAT")
+    dev = resolve(DependencyKind.SYSTEM, "SAP Dev")
+    bare = resolve(DependencyKind.SYSTEM, "SAP")
+
+    ids = {prod.id, uat.id, dev.id, bare.id}
+    assert len(ids) == 4, "PROD/UAT/DEV/unspecified must each be their own canonical dependency"
+    assert prod.environment == "PROD"
+    assert uat.environment == "UAT"
+    assert dev.environment == "DEV"
+    assert bare.environment == "UNKNOWN"
+
+    # But repeated references to the SAME environment still fold together.
+    prod2 = resolve(DependencyKind.SYSTEM, "SAP PROD")
+    prod3 = resolve(DependencyKind.SYSTEM, "SAP Production Instance")
+    assert prod2.id == prod.id
+    assert prod3.id == prod.id

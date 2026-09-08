@@ -4,9 +4,12 @@ brief's central estate-level question). Built entirely on top of
 — no separate scoring path, so an unlock estimate can never disagree with
 what a real reassessment would show once the fix actually lands.
 
-Rule enforced here: never invent a monetary value. `estimated_value` is
+Rule enforced here: never invent a monetary value. `unlock_leverage` is
 always LOW/MEDIUM/HIGH derived from the actual simulated unlock count, or
-explicitly `value_is_unknown=True` — never a fabricated ROI number.
+explicitly `leverage_is_unknown=True` — never a fabricated ROI number. Note
+this is technical leverage (how much moves), not business value (how much
+it's worth) — see the field's docstring in estate_types.py for why those
+are kept separate rather than conflated into one "estimated value".
 """
 from __future__ import annotations
 
@@ -47,7 +50,7 @@ def _resolution_override(category: ConstraintCategory, canonical_dependency: Opt
     return SimulationOverride(assumption=assumption, canonical_dependency=canonical_dependency)
 
 
-def _estimate_value(affected_count: int, unlock_count: int) -> tuple[Level, bool]:
+def _estimate_leverage(affected_count: int, unlock_count: int) -> tuple[Level, bool]:
     if affected_count == 0:
         return Level.LOW, True
     ratio = unlock_count / affected_count
@@ -89,7 +92,7 @@ def compute_unlock_opportunities(
         result = run_simulation(scenario, inputs)
 
         confidence = Level.LOW if result.unresolved_factors else Level.MEDIUM
-        value, value_unknown = _estimate_value(sc.affected_count, result.unlock_count)
+        leverage, leverage_unknown = _estimate_leverage(sc.affected_count, result.unlock_count)
 
         opportunities.append(UnlockOpportunity(
             constraint_key=sc.key, constraint_category=sc.category, canonical_dependency=sc.canonical_dependency,
@@ -97,7 +100,7 @@ def compute_unlock_opportunities(
             current_states=dict(Counter(r.current_state.value for r in result.results)),
             simulated_states=dict(Counter(r.simulated_state.value for r in result.results)),
             state_changes=result.results, estimated_unlock_count=result.unlock_count,
-            estimated_value=value, value_is_unknown=value_unknown, confidence=confidence,
+            unlock_leverage=leverage, leverage_is_unknown=leverage_unknown, confidence=confidence,
             evidence=[f"{r.automation_name}: {r.current_state.value} -> {r.simulated_state.value}" for r in result.results if r.changed],
             assumptions=result.assumptions, unresolved_factors=result.unresolved_factors,
             priority=_priority_from(result.unlock_count, confidence),
@@ -120,8 +123,8 @@ def rank_modernization_priorities(opportunities: list[UnlockOpportunity]) -> lis
         reasons = [f"{o.affected_count} automation(s) affected", f"{o.estimated_unlock_count} likely evolution unlock(s)"]
         if o.unresolved_factors:
             reasons.append(f"{len(o.unresolved_factors)} unresolved factor(s) remain even after this fix")
-        if o.value_is_unknown:
-            reasons.append("business value unknown — no automations currently affected enough to estimate")
+        if o.leverage_is_unknown:
+            reasons.append("unlock leverage unknown — no automations currently affected enough to estimate")
         out.append(ModernizationPriority(
             rank=i, title=title, canonical_dependency=o.canonical_dependency, affected_count=o.affected_count,
             estimated_unlock_count=o.estimated_unlock_count, priority=o.priority, confidence=o.confidence, reasons=reasons,

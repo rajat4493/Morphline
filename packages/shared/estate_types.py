@@ -57,6 +57,11 @@ class CanonicalDependency(BaseModel):
     kind: DependencyKind
     canonical_name: str
     normalized_key: str
+    # PROD | UAT | TEST | DEV | UNKNOWN for SYSTEM dependencies; None for
+    # COMPONENT. Never used to merge — it's part of what makes two systems
+    # with the same cleaned name genuinely different dependencies (a
+    # different environment is not the same real-world tenant).
+    environment: Optional[str] = None
     aliases: list[AliasMapping] = Field(default_factory=list)
 
     def confirmed_raw_names(self) -> set[str]:
@@ -144,8 +149,20 @@ class UnlockOpportunity(BaseModel):
     simulated_states: dict[str, int] = Field(default_factory=dict)
     state_changes: list[StateChange] = Field(default_factory=list)
     estimated_unlock_count: int = 0
-    estimated_value: Level = Level.MEDIUM  # LOW/MEDIUM/HIGH — never a fabricated number (Rule: no invented ROI)
-    value_is_unknown: bool = False
+    # Technical leverage only — how many/what share of affected automations
+    # a fix would move to a higher evolution state. Deliberately NOT named
+    # "estimated_value": a review pointed out that ranking purely on this
+    # number conflates "unlocks 12 tiny internal bots" with "unlocks 2
+    # processes worth £500M of operations" as if they were the same kind of
+    # win. LOW/MEDIUM/HIGH, derived from the actual simulated unlock ratio
+    # — never a fabricated number (Rule: no invented ROI). Once Business
+    # Context carries a real criticality/value field, Modernization
+    # Priority should become unlock_leverage × business_importance ×
+    # feasibility × confidence — not implemented yet; no business-value
+    # signal exists to multiply by, so priority still ranks on leverage
+    # alone (see rank_modernization_priorities).
+    unlock_leverage: Level = Level.MEDIUM
+    leverage_is_unknown: bool = False
     confidence: Level = Level.MEDIUM
     evidence: list[str] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
@@ -172,6 +189,18 @@ class SimulationOverride(BaseModel):
     assumption: SimulationAssumption
     canonical_dependency: Optional[str] = None  # required for dependency-scoped assumptions
     business_context_patch: Optional[dict] = None  # for BUSINESS_CONTEXT_SUPPLIED
+    # For API_AVAILABLE / DEPENDENCY_STABILIZED only: confirmed capability
+    # coverage, e.g. ["READ", "WRITE"]. None means "no capability coverage
+    # confirmed" — the simulation still runs, but as an explicitly labeled
+    # full API-equivalence assumption (every touched UI step is converted,
+    # regardless of what it actually does) rather than a claim that a real
+    # API surface matching this process's specific operations exists. A
+    # review caught that treating "API becomes available" as "assume a
+    # perfect API for everything this bot does" was silently optimistic and
+    # could overstate estate-wide unlock counts — this field is how a
+    # caller states what's actually confirmed, and its absence is what
+    # forces confidence down (see estate/simulation.py, estate/unlock.py).
+    capabilities: Optional[list[str]] = None
 
 
 class SimulationScenario(BaseModel):
