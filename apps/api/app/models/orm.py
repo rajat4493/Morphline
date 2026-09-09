@@ -81,6 +81,25 @@ class EnvironmentEventRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
+class PlatformProfileRow(Base):
+    """Workspace-scoped enterprise platform catalog (Phase 3: Enterprise
+    Transformation Architecture) — the real platforms this customer's
+    estate actually has (UiPath, n8n, AWS Bedrock, ...), each declared
+    under one PlatformRole. `architecture/plan.py` only ever recommends a
+    platform registered here under the role it's needed for — never a
+    platform that merely exists elsewhere in the row set (TheDuck rule:
+    "never recommend a platform because it merely exists in the stack")."""
+
+    __tablename__ = "platform_profiles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id"))
+    name: Mapped[str] = mapped_column(String(200))
+    role: Mapped[str] = mapped_column(String(50))
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
 class BusinessContextRow(Base):
     """One row per Automation (Section 4/5) — persists across re-uploads,
     since enterprise risk facts describe the *process*, not any one

@@ -120,3 +120,38 @@ def test_reassessment_creates_new_assessment_and_preserves_history(client):
 
     diff = client.get(f"/automations/{automation_id}/reassessment-diff").json()
     assert "higher_level_possible" in diff
+
+
+def test_target_architecture_and_platform_catalog_endpoints(client):
+    ws_id = _create_workspace(client)
+    catalog = client.get(f"/workspaces/{ws_id}/platform-catalog").json()
+    assert any(p["role"] == "REASONING" for p in catalog)
+
+    upload = client.post(
+        f"/workspaces/{ws_id}/uploads",
+        data={"automation_name": "Customer Exclusion"},
+        files={"file": ("customer_exclusion.zip", _zip_fixture("customer_exclusion"), "application/zip")},
+    ).json()
+    automation_id = upload["automation_id"]
+
+    plan = client.get(f"/automations/{automation_id}/target-architecture").json()
+    assert plan["recommended_pattern"] == "HYBRID_WITH_HUMAN_APPROVAL"
+    roles = {c["role"] for c in plan["components"]}
+    assert "REASONING" in roles
+    reasoning = next(c for c in plan["components"] if c["role"] == "REASONING")
+    assert reasoning["platform"] == "AWS Bedrock"
+    assert reasoning["manual_decision_required"] is False
+
+    added = client.post(
+        f"/workspaces/{ws_id}/platform-catalog",
+        json={"name": "Azure OpenAI", "role": "REASONING"},
+    )
+    assert added.status_code == 201
+
+    plan2 = client.get(f"/automations/{automation_id}/target-architecture").json()
+    reasoning2 = next(c for c in plan2["components"] if c["role"] == "REASONING")
+    assert reasoning2["manual_decision_required"] is True, "two REASONING platforms now registered — must not silently pick one"
+    assert reasoning2["platform"] is None
+
+    summary = client.get(f"/workspaces/{ws_id}/estate/architecture-summary").json()
+    assert any(row["role"] == "REASONING" for row in summary)

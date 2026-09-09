@@ -294,7 +294,7 @@ weakened.
   added.
 - **Status**: NOT BUILT.
 
-## Summary
+## Summary (estate-intelligence phase)
 
 | # | Capability | Status |
 |---|---|---|
@@ -312,8 +312,109 @@ weakened.
 | 12 | LLM estate-level tasks | NOT BUILT |
 
 Test count at end of the initial estate phase: 79 passing (63 pre-existing +
-16 new). Test count at end of the post-review correction sprint: **85
-passing, 0 failed** (+6 new tests proving the four review findings above are
+16 new). Test count at end of the post-review correction sprint: 85
+passing, 0 failed (+6 new tests proving the four review findings above are
 actually fixed: environment-separation, capability-aware/labeled
 simulation ×3, constraint provenance, leverage-vs-value naming). No
 pre-existing test was modified or weakened at either point.
+
+## 13. Enterprise Transformation Architecture (Phase 3)
+
+- **Requirement**: model the customer's real platform estate (which
+  concrete platforms exist and what role each plays), and for each
+  automation generate a target architecture — not just an evolution-state
+  label — with a migration sequence and guardrails. Locked rule: **never
+  recommend a platform because it merely exists in the customer's stack**;
+  every recommended platform must carry a justification, and an ambiguous
+  choice (multiple equally-plausible catalog platforms for one role) must
+  never be silently resolved.
+- **Implementation**: `packages/shared/architecture_types.py` (all new
+  types: `PlatformRole`, `PlatformProfile`, `TargetArchitectureComponent`,
+  `MigrationStep`, `Guardrail`, `TargetArchitecturePlan`,
+  `EstateArchitectureSummary`), `architecture/plan.py` (pure function,
+  DB-free, matching `scoring/`/`recommendation/`/`estate/` style),
+  `apps/api/app/architecture_service.py` + `apps/api/app/routers/architecture.py`
+  (`GET/POST/DELETE /workspaces/{id}/platform-catalog`,
+  `GET /automations/{id}/target-architecture`,
+  `GET /workspaces/{id}/estate/architecture-summary`), new persisted table
+  `PlatformProfileRow` (the one genuinely new piece of customer-specific
+  data this phase introduces — everything else is computed fresh on every
+  call, same compute-on-demand pattern as the estate phase).
+- **How role need is determined** (never "platform exists, so recommend
+  it"): each `PlatformRole` has its own need condition sourced from
+  evidence the recommendation/scoring engines already computed —
+  REASONING/AGENT_RUNTIME only when `recommended_pattern` is one of the
+  five agentic patterns; BOUNDED_EXECUTION only when real UI-automation
+  surface exists (existing automation stays a valid tool per locked
+  principle 7, never rewritten just because agentic patterns are in play);
+  HUMAN_APPROVAL only for `HYBRID_WITH_HUMAN_APPROVAL` or a confirmed
+  `mandatory_approval`; API_GATEWAY/DATABASE/QUEUE only when the process
+  actually has that kind of system today; OBSERVABILITY when anything
+  beyond plain deterministic RPA is introduced or observability scored LOW.
+  Only after a role is determined needed does `_select_component` look at
+  the catalog — and even then: zero candidates → flagged gap
+  (`manual_decision_required=True`, empty `candidates`); exactly one
+  candidate → confident pick, justified; more than one candidate with no
+  automation-specific evidence to distinguish them → `manual_decision_required=True`
+  listing all candidates as `rejected_alternatives`, never an arbitrary
+  pick.
+- **Migration sequence**: built from a fixed 9-step template (preserve
+  current execution → isolate the decision step → wrap/keep bounded tools
+  → introduce reasoning at ambiguity points → add HITL → add observability/
+  rollback → shadow-run → compare outcomes → gradually shift execution),
+  but each step is only included when its precondition actually holds for
+  this automation, and marked `ALREADY_TRUE` instead of `REQUIRED` when the
+  process already satisfies it (e.g. "wrap as bounded tools" is
+  `ALREADY_TRUE` when a bounded reusable subprocess already exists).
+- **Guardrails**: derived from the same evidence — `TOOL_ALLOWLIST` +
+  `NO_DIRECT_MODEL_CREDENTIALS` whenever REASONING is introduced;
+  `WRITE_LIMITS` + `CONFIDENCE_ROUTING` on HIGH blast radius;
+  `APPROVAL_THRESHOLDS` whenever HUMAN_APPROVAL is needed; `IDEMPOTENCY` +
+  `ROLLBACK` on LOW/unconfirmed reversibility; `FULL_AUDIT_TRAIL` whenever
+  OBSERVABILITY is needed. Never a fixed list applied uniformly regardless
+  of the automation.
+- **Test evidence**: `tests/test_architecture.py` (10 tests) —
+  `test_agentic_automation_gets_reasoning_and_agent_runtime_components`,
+  `test_deterministic_automation_gets_no_reasoning_component` (a
+  deterministic recommendation gets no REASONING component even though the
+  catalog has one registered — proves need-first, not catalog-first),
+  `test_ambiguous_role_is_never_guessed` (core TheDuck rule: two REASONING
+  platforms → `manual_decision_required`, confidence forced LOW),
+  `test_missing_catalog_role_is_a_flagged_gap_not_a_silent_skip`,
+  `test_existing_bounded_subprocess_is_preserved_not_rewritten`,
+  `test_reversibility_guardrails_only_appear_when_reversibility_is_actually_weak`,
+  `test_reasoning_introduction_always_carries_tool_allowlist_and_no_direct_credentials`,
+  `test_migration_sequence_never_proposes_shadow_run_when_nothing_changes`,
+  `test_estate_architecture_summary_counts_platforms_across_automations`,
+  `test_estate_summary_surfaces_manual_decisions_separately_from_confident_picks`.
+  Plus one API-level test in `apps/api/tests/test_api.py`
+  (`test_target_architecture_and_platform_catalog_endpoints`) proving that
+  adding a second REASONING platform via the real API flips an
+  already-confident plan to `manual_decision_required` on the next call —
+  end-to-end proof the ambiguity rule isn't just a unit-level artifact.
+- **Manual evidence**: live API smoke test against 8 seeded automations —
+  `GET /automations/2/target-architecture` (Customer Exclusion Review)
+  produced exactly the worked example from the phase brief (Bedrock +
+  AgentCore + n8n + OutSystems + API Gateway + Observability, with a full
+  migration sequence and 6 guardrails); `GET /workspaces/1/estate/architecture-summary`
+  correctly rolled up "2 automations resolve BOUNDED_EXECUTION to UiPath,
+  3 resolve REASONING to AWS Bedrock" etc. across the real seeded estate.
+- **Status**: VERIFIED for the core decision logic, migration sequencing,
+  guardrail derivation, and the ambiguity/gap-detection rule. NOT BUILT:
+  any frontend surface for this phase (platform catalog editor, target
+  architecture view, estate architecture summary view) — API-only, same
+  gap as the estate-intelligence phase's frontend. Also NOT BUILT: linking
+  a target architecture's platform choices back to *specific* unlock
+  opportunities from the estate phase (e.g. "adding the SAP write API
+  unlocks 6 of these migration plans") — the phase brief's closing example
+  sentence describes exactly this link, and it does not exist yet; the
+  estate phase's unlock analysis and this phase's target architecture are
+  currently two separate, uncombined views over the same underlying data.
+- **Unresolved limitation**: role-need detection and platform selection are
+  both single-pass, rule-based heuristics tuned to the fixtures on hand —
+  they have not been stress-tested against automations with, e.g.,
+  multiple distinct UI systems needing different BOUNDED_EXECUTION
+  treatment, or a process needing two different REASONING platforms for
+  two genuinely different decision points. Both are plausible real-world
+  cases this V0 does not yet distinguish (it treats each role as
+  single-valued per automation).

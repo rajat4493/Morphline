@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from apps.api.app.core.config import settings
 from apps.api.app.db import Base, engine
-from apps.api.app.routers import automations, business_context, dashboard, estate, uploads, workspaces
+from apps.api.app.routers import architecture, automations, business_context, dashboard, estate, uploads, workspaces
 
 
 @asynccontextmanager
@@ -36,3 +36,4 @@ app.include_router(automations.router)
 app.include_router(business_context.router)
 app.include_router(dashboard.router)
 app.include_router(estate.router)
+app.include_router(architecture.router)

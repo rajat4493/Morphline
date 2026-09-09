@@ -410,13 +410,89 @@ LLM tasks, `docs/UAT.md` estate section, `docs/decisions.md` entries — are
 still not built; see "What was deliberately deferred" below, unchanged by
 this sprint.
 
+## Phase 3: Enterprise Transformation Architecture
+
+Once the estate backend was corrected, the next agreed step was NOT
+Orchestrator integration — it's making Morphline produce implementation
+architecture, not just an evolution-state classification. Locked
+sequencing for this line of work: (1) estate backend corrections — done
+above; (2) estate decision UI — still not built, see estate ledger §11;
+(3) enterprise platform capability model; (4) target architecture
+generation; (5) migration blueprint + guardrails; (6) real multi-process
+UAT; (7) Orchestrator read-only integration. This phase covers (3)-(5).
+
+**New locked TheDuck rule for this and all future architecture work**:
+Morphline must never recommend a platform just because it exists in the
+customer's stack. It must explain why that platform owns the
+responsibility, and what alternative was rejected — or, when nothing
+distinguishes two candidates, refuse to choose at all rather than guess.
+This is the same "never fabricate certainty" principle already governing
+ROI and dependency-merging, applied to platform choice.
+
+**What was built**: `packages/shared/architecture_types.py` (PlatformRole,
+PlatformProfile, TargetArchitectureComponent, MigrationStep, Guardrail,
+TargetArchitecturePlan, EstateArchitectureSummary), `architecture/plan.py`
+(pure function `generate_target_architecture` — role need is determined
+FIRST from evidence the scoring/recommendation engines already computed,
+THEN and only then matched against the workspace's platform catalog;
+`summarize_estate_architecture` for the estate rollup), `apps/api/app/architecture_service.py`
++ `apps/api/app/routers/architecture.py` (platform catalog CRUD,
+per-automation target architecture, estate architecture summary), new
+`PlatformProfileRow` table seeded with a default catalog per workspace
+(AWS Bedrock/AgentCore/n8n/UiPath/OutSystems/generic API-DB-Queue-
+Observability platforms — ordinary editable data, not a hardcoded
+recommendation).
+
+**How the "never guess" rule is actually enforced** (`architecture/plan.py::_select_component`):
+zero catalog platforms registered for a needed role → flagged as a gap
+(`manual_decision_required=True`, empty `candidates`) — a missing platform
+is not silently skipped. Exactly one candidate → confident pick with a
+justification citing the actual evidence that made the role necessary.
+More than one candidate with nothing in the automation's evidence to
+distinguish them → `manual_decision_required=True`, every candidate listed
+in `rejected_alternatives`, plan confidence forced to LOW. Verified live:
+adding a second REASONING platform to a workspace's catalog via the real
+API flips an already-confident target architecture plan to
+`manual_decision_required=True` on the very next call
+(`apps/api/tests/test_api.py::test_target_architecture_and_platform_catalog_endpoints`).
+
+**Verified against the phase brief's own worked example**: `GET /automations/{customer_exclusion_id}/target-architecture`
+against the seeded sample data produced exactly the example architecture
+from the brief — Bedrock (reasoning) + AgentCore (agent runtime) + n8n
+(orchestration) + UiPath (bounded execution, none needed here since this
+particular fixture has no bounded UI surface) + OutSystems (human
+approval) + Internal API Gateway + Enterprise Observability, an 8-step
+migration sequence, and 6 guardrails (tool allowlist, no-direct-
+credentials, approval thresholds, idempotency, rollback, full audit
+trail) — see `docs/verification-ledger.md` §13 for the full trace.
+
+**What this phase explicitly does NOT do yet** (see verification ledger
+§13 for the honest gap list): no frontend for the platform catalog editor,
+target architecture view, or estate architecture summary — API-only, same
+gap as the estate-intelligence phase. No link from a target architecture's
+platform choices back to *specific* unlock opportunities from the estate
+phase — the brief's own closing example ("adding the SAP write API unlocks
+6 of these migration plans") describes exactly this link, and it doesn't
+exist: `estate/unlock.py`'s UnlockOpportunity and `architecture/plan.py`'s
+TargetArchitecturePlan are still two separate, uncombined views over the
+same underlying per-automation data. Role-need detection and platform
+selection are both single-pass per automation — an automation needing two
+different REASONING platforms for two genuinely distinct decision points,
+or multiple UI systems needing different BOUNDED_EXECUTION treatment, is
+not yet distinguished (each role is treated as single-valued).
+
+New tests: `tests/test_architecture.py` (10 tests) +
+`apps/api/tests/test_api.py::test_target_architecture_and_platform_catalog_endpoints`
+(1 test) — 11 new, all passing, 0 existing tests modified.
+
 ## End-of-phase status
 
 - Final commit hash: see `git log` head on `claude/new-session-ekr17k` —
   the commit adding this update is the last one of this phase.
-- Final test count: **85 passed**, 0 failed (`pytest -q` from repo root;
-  started this phase at 63, was 79 before the correction sprint above).
-  22 new tests total, 0 existing tests modified.
+- Final test count: **96 passed**, 0 failed (`pytest -q` from repo root;
+  started the estate-intelligence phase at 63, was 79 before the
+  correction sprint, 85 after it, now 96 after Phase 3).
+  33 new tests total across all three sub-phases, 0 existing tests modified.
 - Verification ledger status: see `docs/verification-ledger.md`. Summary:
   8 capabilities VERIFIED, 1 MANUAL-ONLY (environment memory has no
   automated test yet), 1 PARTIAL (reusable-tool detection — the estate-level
@@ -478,22 +554,43 @@ this sprint.
     calls are recorded informally in "Open decisions" above but not yet
     given numbered entries in the project's decision log.
 
-### Recommended next steps, in priority order
+### Recommended next steps, in priority order (updated after Phase 3)
 
-1. Build the estate frontend (`apps/web/src/app/workspaces/[id]/estate/...`)
-   against the existing, tested API — start with Estate Overview + Unlock
-   Opportunities, since those directly answer the CIO/CoE questions the
-   brief cares most about.
-2. Add the missing `EnvironmentEventRow` automated test (see verification
+1. **Link unlock analysis to target architecture.** Right now
+   `estate/unlock.py` and `architecture/plan.py` are two separate views
+   over the same per-automation data. The phase 3 brief's own closing
+   example — "adding the SAP write API unlocks 6 of these migration
+   plans" — requires computing a target architecture plan *inside* the
+   simulated (post-fix) state for each affected automation and diffing it
+   against the current-state plan, so an UnlockOpportunity can report not
+   just a state-change count but which migration plans it actually
+   changes. This is the single highest-leverage next step: it's what turns
+   the two Phase-3-and-estate views into the combined answer the brief
+   describes, and it's additive (compose `run_simulation` +
+   `generate_target_architecture`, no new architecture).
+2. Build the estate + architecture frontend
+   (`apps/web/src/app/workspaces/[id]/estate/...`) against the existing,
+   tested APIs — start with Estate Overview + Unlock Opportunities (CIO/CoE
+   questions) and a Target Architecture view per automation (Architect/
+   Agentic-team questions), since both APIs are now stable and tested.
+3. Add the missing `EnvironmentEventRow` automated test (see verification
    ledger #6).
-3. Build fixtures with deliberately varied raw system names across
+4. Build fixtures with deliberately varied raw system names across
    automations (e.g. "SAP" in one project, "SAP Production" in another) to
    get an end-to-end (not just unit-level) proof of alias folding across a
    real upload flow.
-4. Append `docs/decisions.md` entries for this phase's architectural calls.
-5. Only after the above: estate-level LLM summarization tasks — lowest
-   priority since the brief is explicit that deterministic evidence, not
-   LLM narrative, is what must carry the estate's core claims.
+5. Handle multi-valued roles: an automation needing two REASONING
+   platforms for two distinct decision points, or multiple UI systems
+   needing different BOUNDED_EXECUTION treatment, is not yet distinguished
+   by `architecture/plan.py` (each role is currently single-valued per
+   automation) — worth a fixture that actually has this shape before
+   generalizing the model further.
+6. Append `docs/decisions.md` entries for this phase's and Phase 3's
+   architectural calls.
+7. Only after the above: estate-level and architecture-level LLM
+   summarization tasks (e.g. narrating a target architecture plan in
+   prose) — lowest priority since the brief is explicit that deterministic
+   evidence, not LLM narrative, is what must carry these claims.
 
 ### TheDuck learning added this phase
 
