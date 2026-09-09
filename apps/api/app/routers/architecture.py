@@ -19,10 +19,13 @@ from apps.api.app.architecture_service import (
     load_platform_catalog,
 )
 from apps.api.app.db import get_db
-from apps.api.app.estate_service import load_workspace_snapshots
+from apps.api.app.estate_service import load_workspace_snapshots, make_resolver, to_automation_facts, to_sim_inputs
 from apps.api.app.models import orm
+from architecture.impact import compute_impact_for_shared_constraint, compute_transformation_impact
 from architecture.plan import summarize_estate_architecture
+from estate.graph import compute_shared_constraints
 from packages.shared.architecture_types import PlatformRole
+from packages.shared.estate_types import SimulationScenario
 
 router = APIRouter(tags=["architecture"])
 
@@ -87,3 +90,48 @@ def get_estate_architecture_summary(workspace_id: int, db: Session = Depends(get
     snapshots = load_workspace_snapshots(db, workspace_id)
     plans = [build_target_architecture(s, catalog) for s in snapshots]
     return [summarize_estate_architecture(plans, role).model_dump(mode="json") for role in PlatformRole]
+
+
+@router.post("/workspaces/{workspace_id}/estate/transformation-impact")
+def post_transformation_impact(workspace_id: int, scenario: SimulationScenario, db: Session = Depends(get_db)):
+    """Phase 4: composes what-if simulation with target-architecture
+    generation. Never writes anything — same guarantee as
+    POST /estate/simulate, just with the architecture diff attached. Body
+    is the same SimulationScenario shape /estate/simulate already accepts."""
+    _get_workspace(db, workspace_id)
+    ensure_default_catalog(db, workspace_id)
+    catalog = load_platform_catalog(db, workspace_id)
+    snapshots = load_workspace_snapshots(db, workspace_id)
+    sim_inputs = to_sim_inputs(snapshots)
+    result = compute_transformation_impact(scenario, sim_inputs, catalog)
+    return result.model_dump(mode="json")
+
+
+class ConstraintImpactRequest(BaseModel):
+    constraint_key: str
+
+
+@router.post("/workspaces/{workspace_id}/estate/shared-constraints/transformation-impact")
+def post_constraint_transformation_impact(workspace_id: int, payload: ConstraintImpactRequest, db: Session = Depends(get_db)):
+    """The one-click path from a shared constraint a user is looking at
+    (as shown by GET /estate/shared-constraints) straight to its
+    transformation impact, without the caller having to know the
+    category->assumption mapping unlock analysis uses internally."""
+    _get_workspace(db, workspace_id)
+    ensure_default_catalog(db, workspace_id)
+    catalog = load_platform_catalog(db, workspace_id)
+    snapshots = load_workspace_snapshots(db, workspace_id)
+    facts = to_automation_facts(snapshots)
+    resolve, _cache = make_resolver(db, workspace_id)
+    shared = compute_shared_constraints(facts, resolve)
+    constraint = next((c for c in shared if c.key == payload.constraint_key), None)
+    if constraint is None:
+        raise HTTPException(404, "Shared constraint not found (it may no longer be active)")
+
+    sim_inputs = to_sim_inputs(snapshots)
+    sim_inputs_by_id = {s.automation_id: s for s in sim_inputs}
+    result = compute_impact_for_shared_constraint(constraint, sim_inputs_by_id, catalog)
+    if result is None:
+        raise HTTPException(422, f"No resolution mechanism is modeled for constraint category {constraint.category.value}")
+    db.commit()
+    return result.model_dump(mode="json")

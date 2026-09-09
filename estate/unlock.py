@@ -50,6 +50,17 @@ def _resolution_override(category: ConstraintCategory, canonical_dependency: Opt
     return SimulationOverride(assumption=assumption, canonical_dependency=canonical_dependency)
 
 
+def resolution_override_for(category: ConstraintCategory, canonical_dependency: Optional[str]) -> Optional[SimulationOverride]:
+    """Public wrapper so other callers (e.g. `architecture/impact.py`, when
+    a caller wants the transformation impact of resolving one specific
+    already-computed SharedConstraint) reuse the exact same
+    category -> assumption mapping unlock analysis uses, instead of
+    duplicating it. Returns None for a category with no modeled resolution
+    mechanism (e.g. INSUFFICIENT_BUSINESS_CONTEXT) — same as unlock
+    analysis silently skipping it, just surfaced to the caller instead."""
+    return _resolution_override(category, canonical_dependency)
+
+
 def _estimate_leverage(affected_count: int, unlock_count: int) -> tuple[Level, bool]:
     if affected_count == 0:
         return Level.LOW, True

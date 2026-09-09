@@ -110,3 +110,58 @@ class EstateArchitectureSummary(BaseModel):
     platform_counts: dict[str, int] = Field(default_factory=dict)
     manual_decision_count: int = 0
     total_automations: int = 0
+
+
+# ---------------------------------------------------------------------------
+# Phase 4: Transformation Impact — composes what-if simulation with target
+# architecture generation. Nothing new is invented here: a
+# TransformationImpact is just "the current TargetArchitecturePlan" and
+# "the TargetArchitecturePlan generated from the simulated (post-fix)
+# process model," diffed role by role, plus the evolution-state change and
+# remaining blockers the simulation already computes. Composition, not a
+# new decision engine.
+# ---------------------------------------------------------------------------
+
+class ComponentChange(BaseModel):
+    """One role's before/after across a simulation. `added`/`removed` cover
+    a role that only becomes (or stops being) necessary once the fix lands
+    — e.g. HUMAN_APPROVAL disappearing once a constraint requiring it is
+    resolved — not just a platform swap within the same role."""
+
+    role: PlatformRole
+    before_platform: Optional[str] = None
+    after_platform: Optional[str] = None
+    before_manual_decision: bool = False
+    after_manual_decision: bool = False
+    added: bool = False    # role wasn't needed before, is needed after
+    removed: bool = False  # role was needed before, isn't needed after
+    changed: bool = False  # platform, manual-decision status, or presence differs
+
+
+class TransformationImpact(BaseModel):
+    """One automation's full before/after picture for one simulated
+    scenario: architecture diff + evolution-state change + what's still
+    blocking it, side by side."""
+
+    automation_id: int
+    automation_name: str
+    current_architecture: TargetArchitecturePlan
+    simulated_architecture: TargetArchitecturePlan
+    component_changes: list[ComponentChange] = Field(default_factory=list)
+    current_state: str = ""
+    simulated_state: str = ""
+    state_changed: bool = False
+    remaining_blockers: list[str] = Field(default_factory=list)
+
+
+class TransformationImpactResult(BaseModel):
+    """The full response for 'what does this fix change, architecturally,
+    across the estate' — one scenario, many automations, plus the
+    before/after platform-usage rollup for each role."""
+
+    scenario_name: str = ""
+    impacts: list[TransformationImpact] = Field(default_factory=list)
+    platform_usage_before: list[EstateArchitectureSummary] = Field(default_factory=list)
+    platform_usage_after: list[EstateArchitectureSummary] = Field(default_factory=list)
+    unlock_count: int = 0
+    unresolved_factors: list[str] = Field(default_factory=list)

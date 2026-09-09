@@ -164,9 +164,14 @@ def _apply_override(pm: ProcessModel, biz: BusinessContext, override: Simulation
 
 def simulate_automation(
     pm: ProcessModel, biz: BusinessContext, overrides: list[SimulationOverride]
-) -> tuple[RecommendationResult, dict[str, DimensionScore], list[str], bool]:
-    """Returns (recommendation, scores, notes, used_full_api_equivalence).
-    The last element is True if any override in this scenario simulated
+) -> tuple[ProcessModel, BusinessContext, RecommendationResult, dict[str, DimensionScore], list[str], bool]:
+    """Returns (simulated_pm, simulated_biz, recommendation, scores, notes,
+    used_full_api_equivalence). `simulated_pm`/`simulated_biz` are the deep
+    copies after every override has been applied — exposed so a caller
+    (e.g. `architecture/impact.py`, composing this with target-architecture
+    generation) can feed the exact post-simulation state into another pure
+    function, without ever touching the real, unmutated originals passed
+    in. The last scalar is True if any override in this scenario simulated
     "API available" without a confirmed capability list — callers must
     treat that result as an unverified upper bound, not a point estimate
     (see `run_simulation`, which folds this into `unresolved_factors` so
@@ -197,7 +202,7 @@ def simulate_automation(
         all_notes.append("Simulated: observability -> HIGH")
 
     rec = recommend(pm, scores, biz)
-    return rec, scores, all_notes, full_equivalence_used
+    return pm, biz, rec, scores, all_notes, full_equivalence_used
 
 
 def run_simulation(scenario: SimulationScenario, inputs: list[SimInput]) -> SimulationResult:
@@ -208,7 +213,7 @@ def run_simulation(scenario: SimulationScenario, inputs: list[SimInput]) -> Simu
     unresolved: list[str] = []
 
     for sim_input in targets:
-        rec, _scores, notes, full_equivalence_used = simulate_automation(
+        _pm, _biz, rec, _scores, notes, full_equivalence_used = simulate_automation(
             sim_input.process_model, sim_input.business_context, scenario.overrides
         )
         assumptions.extend(n for n in notes if n not in assumptions)

@@ -36,12 +36,20 @@ export default function WorkspaceDashboardPage() {
           <h1 className="text-2xl font-semibold text-ink">{dashboard.workspace.name}</h1>
           <p className="mt-1 text-sm text-subtle">Automation estate — evolution readiness across all uploaded processes.</p>
         </div>
-        <Link
-          href={`/workspaces/${workspaceId}/upload`}
-          className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink/90"
-        >
-          Upload Process
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/workspaces/${workspaceId}/transformation`}
+            className="rounded-md border border-line bg-white px-4 py-2 text-sm font-medium text-ink hover:border-slate-300"
+          >
+            Transformation Impact
+          </Link>
+          <Link
+            href={`/workspaces/${workspaceId}/upload`}
+            className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink/90"
+          >
+            Upload Process
+          </Link>
+        </div>
       </div>
 
       <section className="mt-8 rounded-lg border border-line bg-white p-5">

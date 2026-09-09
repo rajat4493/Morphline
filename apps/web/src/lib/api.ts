@@ -251,6 +251,123 @@ export interface ReassessmentDiff {
   why: string[];
 }
 
+// --- Phase 4: Transformation Impact (composes estate what-if simulation
+// with Phase 3 target-architecture generation) ---
+
+export type PlatformRole =
+  | "REASONING"
+  | "AGENT_RUNTIME"
+  | "ORCHESTRATION"
+  | "BOUNDED_EXECUTION"
+  | "HUMAN_APPROVAL"
+  | "API_GATEWAY"
+  | "DATABASE"
+  | "QUEUE"
+  | "OBSERVABILITY";
+
+export const ROLE_LABELS: Record<PlatformRole, string> = {
+  REASONING: "Reasoning",
+  AGENT_RUNTIME: "Agent Runtime",
+  ORCHESTRATION: "Orchestration",
+  BOUNDED_EXECUTION: "Bounded Execution",
+  HUMAN_APPROVAL: "Human Approval",
+  API_GATEWAY: "API Gateway",
+  DATABASE: "Database",
+  QUEUE: "Queue",
+  OBSERVABILITY: "Observability",
+};
+
+export interface SharedConstraint {
+  key: string;
+  category: string;
+  canonical_dependency: string | null;
+  affected_automation_ids: number[];
+  affected_automation_names: string[];
+  affected_count: number;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  sample_evidence: EvidenceItem[];
+}
+
+export interface TargetArchitectureComponent {
+  role: PlatformRole;
+  platform: string | null;
+  justification: string | null;
+  rejected_alternatives: { platform: string; reason: string }[];
+  manual_decision_required: boolean;
+  candidates: string[];
+}
+
+export interface MigrationStep {
+  order: number;
+  title: string;
+  description: string;
+  status: "ALREADY_TRUE" | "REQUIRED";
+}
+
+export interface Guardrail {
+  type: string;
+  reason: string;
+}
+
+export interface TargetArchitecturePlan {
+  automation_id: number | null;
+  automation_name: string;
+  current_summary: string;
+  recommended_state: string;
+  recommended_pattern: string;
+  components: TargetArchitectureComponent[];
+  migration_sequence: MigrationStep[];
+  guardrails: Guardrail[];
+  confidence: "LOW" | "MEDIUM" | "HIGH";
+  unresolved_factors: string[];
+}
+
+export interface ComponentChange {
+  role: PlatformRole;
+  before_platform: string | null;
+  after_platform: string | null;
+  before_manual_decision: boolean;
+  after_manual_decision: boolean;
+  added: boolean;
+  removed: boolean;
+  changed: boolean;
+}
+
+export interface TransformationImpact {
+  automation_id: number;
+  automation_name: string;
+  current_architecture: TargetArchitecturePlan;
+  simulated_architecture: TargetArchitecturePlan;
+  component_changes: ComponentChange[];
+  current_state: string;
+  simulated_state: string;
+  state_changed: boolean;
+  remaining_blockers: string[];
+}
+
+export interface EstateArchitectureSummary {
+  role: PlatformRole;
+  platform_counts: Record<string, number>;
+  manual_decision_count: number;
+  total_automations: number;
+}
+
+export interface TransformationImpactResult {
+  scenario_name: string;
+  impacts: TransformationImpact[];
+  platform_usage_before: EstateArchitectureSummary[];
+  platform_usage_after: EstateArchitectureSummary[];
+  unlock_count: number;
+  unresolved_factors: string[];
+}
+
+export interface PlatformProfile {
+  id: number;
+  name: string;
+  role: PlatformRole;
+  notes: string | null;
+}
+
 export const api = {
   listWorkspaces: () => request<Workspace[]>("/workspaces"),
   createWorkspace: (name: string) =>
@@ -285,6 +402,16 @@ export const api = {
       `/automations/${automationId}/business-context`,
       { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(biz) }
     ),
+  getSharedConstraints: (workspaceId: number) => request<SharedConstraint[]>(`/workspaces/${workspaceId}/estate/shared-constraints`),
+  getTargetArchitecture: (automationId: number) => request<TargetArchitecturePlan>(`/automations/${automationId}/target-architecture`),
+  getArchitectureSummary: (workspaceId: number) => request<EstateArchitectureSummary[]>(`/workspaces/${workspaceId}/estate/architecture-summary`),
+  getPlatformCatalog: (workspaceId: number) => request<PlatformProfile[]>(`/workspaces/${workspaceId}/platform-catalog`),
+  getConstraintTransformationImpact: (workspaceId: number, constraintKey: string) =>
+    request<TransformationImpactResult>(`/workspaces/${workspaceId}/estate/shared-constraints/transformation-impact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ constraint_key: constraintKey }),
+    }),
 };
 
 export const STATE_LABELS: Record<EvolutionState, string> = {

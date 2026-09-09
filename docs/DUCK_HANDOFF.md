@@ -485,14 +485,58 @@ New tests: `tests/test_architecture.py` (10 tests) +
 `apps/api/tests/test_api.py::test_target_architecture_and_platform_catalog_endpoints`
 (1 test) — 11 new, all passing, 0 existing tests modified.
 
+## Phase 4: Transformation Impact + Decision UX
+
+Directed narrowly, and kept narrow: compose simulation + target
+architecture; show before/after architecture; show platform-usage impact;
+show remaining blockers; build an estate UI around these decisions; keep
+multi-role architecture extensible but don't over-engineer it yet.
+
+**What was built**: `architecture/impact.py` — `compute_transformation_impact`
+(arbitrary `SimulationScenario` → per-automation before/after
+`TargetArchitecturePlan` + role-by-role `ComponentChange` diff + platform-
+usage rollups) and `compute_impact_for_shared_constraint` (the one-click
+path from an already-computed `SharedConstraint`, reusing
+`estate.unlock.resolution_override_for` — a new public wrapper — so the
+category→assumption mapping lives in exactly one place). New endpoints
+`POST /workspaces/{id}/estate/transformation-impact` and
+`POST /workspaces/{id}/estate/shared-constraints/transformation-impact`.
+`estate/simulation.py::simulate_automation` now also returns the mutated
+`pm`/`biz` (previously discarded after use) so the impact module can feed
+the exact post-simulation state into `generate_target_architecture` rather
+than re-deriving an approximation.
+
+**First real estate frontend page**: `apps/web/src/app/workspaces/[workspaceId]/transformation/page.tsx` —
+lists shared constraints, and on selection shows the scenario's unlock
+count, a platform-usage-impact table (before/after platform per role
+across the estate), and one card per affected automation with its
+evolution-state change, a before/after component table (struck-through
+removed platforms, "NEW" badge on added roles, highlighted changed rows),
+and remaining blockers. Linked from the workspace dashboard ("Transformation
+Impact" button). Screenshotted three states (list, successful impact,
+honest 422-gap message for an unmapped category) — see verification ledger
+§14.
+
+**Scope discipline honored**: multi-role architecture (a role needing more
+than one simultaneous platform per automation) was NOT built — `PlatformRole`
+stays single-valued, per Phase 3's documented limitation. The new types
+(`ComponentChange`, `TransformationImpact`) are shaped so a future
+multi-valued role only requires changing `TargetArchitectureComponent`
+to hold a list, not a redesign of the diff/impact layer — extensible
+without having been generalized prematurely.
+
+New tests: `tests/test_transformation_impact.py` (9 tests) +
+2 API-level tests in `apps/api/tests/test_api.py` — 11 new, all passing,
+0 existing tests modified.
+
 ## End-of-phase status
 
 - Final commit hash: see `git log` head on `claude/new-session-ekr17k` —
   the commit adding this update is the last one of this phase.
-- Final test count: **96 passed**, 0 failed (`pytest -q` from repo root;
+- Final test count: **107 passed**, 0 failed (`pytest -q` from repo root;
   started the estate-intelligence phase at 63, was 79 before the
-  correction sprint, 85 after it, now 96 after Phase 3).
-  33 new tests total across all three sub-phases, 0 existing tests modified.
+  correction sprint, 85 after it, 96 after Phase 3, now 107 after Phase 4).
+  44 new tests total across all four sub-phases, 0 existing tests modified.
 - Verification ledger status: see `docs/verification-ledger.md`. Summary:
   8 capabilities VERIFIED, 1 MANUAL-ONLY (environment memory has no
   automated test yet), 1 PARTIAL (reusable-tool detection — the estate-level
@@ -554,25 +598,26 @@ New tests: `tests/test_architecture.py` (10 tests) +
     calls are recorded informally in "Open decisions" above but not yet
     given numbered entries in the project's decision log.
 
-### Recommended next steps, in priority order (updated after Phase 3)
+### Recommended next steps, in priority order (updated after Phase 4)
 
-1. **Link unlock analysis to target architecture.** Right now
-   `estate/unlock.py` and `architecture/plan.py` are two separate views
-   over the same per-automation data. The phase 3 brief's own closing
-   example — "adding the SAP write API unlocks 6 of these migration
-   plans" — requires computing a target architecture plan *inside* the
-   simulated (post-fix) state for each affected automation and diffing it
-   against the current-state plan, so an UnlockOpportunity can report not
-   just a state-change count but which migration plans it actually
-   changes. This is the single highest-leverage next step: it's what turns
-   the two Phase-3-and-estate views into the combined answer the brief
-   describes, and it's additive (compose `run_simulation` +
-   `generate_target_architecture`, no new architecture).
-2. Build the estate + architecture frontend
-   (`apps/web/src/app/workspaces/[id]/estate/...`) against the existing,
-   tested APIs — start with Estate Overview + Unlock Opportunities (CIO/CoE
-   questions) and a Target Architecture view per automation (Architect/
-   Agentic-team questions), since both APIs are now stable and tested.
+1. ~~Link unlock analysis to target architecture.~~ **DONE in Phase 4** —
+   `architecture/impact.py`. Not yet done: surfacing this composed view
+   from the *unlock opportunities* list itself (today it's reachable via
+   the shared-constraints page, since `compute_impact_for_shared_constraint`
+   takes a `SharedConstraint`, not an `UnlockOpportunity` — the two are
+   closely related but not identical; wiring the same one-click flow onto
+   `/estate/unlock-opportunities` rows would let a CIO go straight from
+   "this unlocks 6 automations" to the architecture diff without a detour
+   through the shared-constraints page).
+2. Build out the remaining estate frontend
+   (`apps/web/src/app/workspaces/[id]/...`) against the existing, tested
+   APIs: a standalone Estate Overview (evolution funnel + top constraints,
+   today only on the pre-estate dashboard), Systems & Dependencies
+   (canonical dependency dictionary + alias confirmation UI), and a
+   per-automation Target Architecture tab on the automation detail page
+   (today `GET /automations/{id}/target-architecture` has no frontend of
+   its own — only reachable indirectly via the transformation-impact
+   page's per-automation cards).
 3. Add the missing `EnvironmentEventRow` automated test (see verification
    ledger #6).
 4. Build fixtures with deliberately varied raw system names across
@@ -584,9 +629,12 @@ New tests: `tests/test_architecture.py` (10 tests) +
    needing different BOUNDED_EXECUTION treatment, is not yet distinguished
    by `architecture/plan.py` (each role is currently single-valued per
    automation) — worth a fixture that actually has this shape before
-   generalizing the model further.
-6. Append `docs/decisions.md` entries for this phase's and Phase 3's
-   architectural calls.
+   generalizing the model further. Phase 4 deliberately did not tackle
+   this (kept in scope, not over-engineered) but its types
+   (`ComponentChange`, `TransformationImpact`) were shaped so this
+   generalization stays additive when it's actually needed.
+6. Append `docs/decisions.md` entries for Phases 3 and 4's architectural
+   calls.
 7. Only after the above: estate-level and architecture-level LLM
    summarization tasks (e.g. narrating a target architecture plan in
    prose) — lowest priority since the brief is explicit that deterministic

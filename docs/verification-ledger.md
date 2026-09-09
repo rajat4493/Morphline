@@ -418,3 +418,77 @@ pre-existing test was modified or weakened at either point.
   two genuinely different decision points. Both are plausible real-world
   cases this V0 does not yet distinguish (it treats each role as
   single-valued per automation).
+
+## 14. Transformation Impact + Decision UX (Phase 4)
+
+- **Requirement** (narrow scope, as directed): compose what-if simulation
+  with target-architecture generation; show before/after architecture per
+  automation; show platform-usage impact across the estate; show remaining
+  blockers; build an estate UI around these decisions; keep multi-role
+  architecture extensible without over-engineering it now.
+- **Implementation**: `architecture/impact.py` (pure, DB-free —
+  `compute_transformation_impact` for an arbitrary `SimulationScenario`,
+  `compute_impact_for_shared_constraint` as the one-click path from an
+  already-computed `SharedConstraint`), new types in
+  `packages/shared/architecture_types.py` (`ComponentChange`,
+  `TransformationImpact`, `TransformationImpactResult`), new endpoints
+  `POST /workspaces/{id}/estate/transformation-impact` (arbitrary
+  scenario, same body shape as `/estate/simulate`) and
+  `POST /workspaces/{id}/estate/shared-constraints/transformation-impact`
+  (one-click, takes just a `constraint_key`), and the first real estate
+  frontend page: `apps/web/src/app/workspaces/[workspaceId]/transformation/page.tsx`.
+- **How composition stays honest**: `estate/simulation.py::simulate_automation`
+  was extended to also return the mutated `pm`/`biz` (previously discarded
+  internally), so `architecture/impact.py` can feed the *exact* post-
+  simulation state into `generate_target_architecture` — never a
+  re-derived approximation. The "before" architecture is generated fresh
+  from the real, unmutated process model + freshly recomputed scores
+  (never a stale cached plan), so current and simulated architectures are
+  always produced by the identical code path, just on different inputs.
+  `resolution_override_for()` was added to `estate/unlock.py` as a public
+  wrapper so the one-click path reuses the exact category→assumption
+  mapping unlock analysis already uses, instead of a second copy of that
+  mapping living in the impact module or the frontend.
+- **Test evidence**: `tests/test_transformation_impact.py` (9 tests) —
+  `test_current_architecture_matches_independently_generated_plan` (the
+  composition doesn't silently alter what it wraps),
+  `test_bounded_execution_removed_when_ui_dependency_fully_resolved` (the
+  core "before/after architecture" signal — UiPath drops out of the plan
+  once its dependency is simulated away),
+  `test_unchanged_roles_are_reported_as_unchanged`,
+  `test_remaining_blockers_reported_when_state_does_not_fully_unlock`,
+  `test_platform_usage_before_and_after_reflect_the_diff`,
+  `test_ambiguous_platform_choice_survives_into_transformation_impact`
+  (Phase 3's "never guess" rule holds through the composition, not just in
+  isolation), `test_multiple_automations_aggregate_independently`,
+  `test_one_click_impact_from_shared_constraint_matches_manual_scenario`,
+  `test_one_click_impact_returns_none_for_unmapped_category`. Plus two
+  API-level tests in `apps/api/tests/test_api.py`
+  (`test_transformation_impact_endpoint`,
+  `test_shared_constraint_transformation_impact_one_click`) proving both
+  endpoints end-to-end, including the 422 response for a constraint
+  category with no modeled resolution mechanism.
+- **Manual/visual evidence**: ran both the API and the new frontend page
+  against 8 seeded automations. Screenshotted three states: the shared-
+  blocker list, a successful impact view (SAP UI dependency resolved on
+  Invoice Processing — BOUNDED_EXECUTION/UiPath correctly shown removed
+  with a struck-through "before" cell, ORCHESTRATION/OBSERVABILITY shown
+  unchanged, remaining blockers listed, platform-usage-impact table
+  correctly showing UiPath's count dropping from 1 to 0), and the honest-
+  gap state (selecting INSUFFICIENT_BUSINESS_CONTEXT — which has no
+  modeled resolution mechanism — surfaces the 422 as a plain-language
+  explanation, not a raw error or a guessed simulation).
+- **Status**: VERIFIED. This is also the first estate-level frontend page
+  built across any of these phases — the estate-intelligence and Phase 3
+  frontend gaps noted above are now partially closed (shared constraints +
+  transformation impact have a real UI; Estate Overview, Systems &
+  Dependencies, standalone Unlock Opportunities, and a dedicated What-If
+  Simulator page still do not).
+- **Scope discipline followed**: multi-role architecture (a role having
+  more than one simultaneously-needed platform per automation) was
+  deliberately NOT built — `PlatformRole` remains single-valued per
+  automation, per Phase 3's documented limitation, unchanged here. The
+  types added (`ComponentChange`, `TransformationImpact`) are structured so
+  that a future multi-valued role would only require changing
+  `TargetArchitectureComponent` to hold a list rather than one
+  platform/justification — not a redesign of the diff or impact layer.

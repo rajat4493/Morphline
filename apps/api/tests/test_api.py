@@ -155,3 +155,57 @@ def test_target_architecture_and_platform_catalog_endpoints(client):
 
     summary = client.get(f"/workspaces/{ws_id}/estate/architecture-summary").json()
     assert any(row["role"] == "REASONING" for row in summary)
+
+
+def test_transformation_impact_endpoint(client):
+    ws_id = _create_workspace(client)
+    upload = client.post(
+        f"/workspaces/{ws_id}/uploads",
+        data={"automation_name": "Invoice"},
+        files={"file": ("invoice_processing.zip", _zip_fixture("invoice_processing"), "application/zip")},
+    ).json()
+
+    resp = client.post(
+        f"/workspaces/{ws_id}/estate/transformation-impact",
+        json={
+            "name": "SAP API available",
+            "overrides": [{"assumption": "API_AVAILABLE", "canonical_dependency": "SAP"}],
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["impacts"], "expected at least one automation impact"
+    impact = body["impacts"][0]
+    assert "component_changes" in impact
+    bounded = next((c for c in impact["component_changes"] if c["role"] == "BOUNDED_EXECUTION"), None)
+    assert bounded is not None
+    assert bounded["removed"] is True
+    assert any(row["role"] == "BOUNDED_EXECUTION" for row in body["platform_usage_before"])
+
+
+def test_shared_constraint_transformation_impact_one_click(client):
+    ws_id = _create_workspace(client)
+    client.post(
+        f"/workspaces/{ws_id}/uploads",
+        data={"automation_name": "Invoice"},
+        files={"file": ("invoice_processing.zip", _zip_fixture("invoice_processing"), "application/zip")},
+    )
+
+    shared = client.get(f"/workspaces/{ws_id}/estate/shared-constraints").json()
+    ui_constraint = next(c for c in shared if c["category"] == "UNSTABLE_UI_DEPENDENCY" and c["canonical_dependency"])
+
+    resp = client.post(
+        f"/workspaces/{ws_id}/estate/shared-constraints/transformation-impact",
+        json={"constraint_key": ui_constraint["key"]},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["impacts"]
+
+    unmapped = next((c for c in shared if c["category"] == "INSUFFICIENT_BUSINESS_CONTEXT"), None)
+    if unmapped:
+        resp2 = client.post(
+            f"/workspaces/{ws_id}/estate/shared-constraints/transformation-impact",
+            json={"constraint_key": unmapped["key"]},
+        )
+        assert resp2.status_code == 422
