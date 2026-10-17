@@ -1,0 +1,1672 @@
+{
+  "corpus_version": "public-heldout-v1",
+  "manifest_sha256": "44804418c925a3b16971ae283b1b2c1375f4cfb2f1941a96d2d2095de7860971",
+  "morphline_commit": "9f33be07b68b270fbe9533c668ed44ddac362464",
+  "results": [
+    {
+      "benchmark_id": "R01",
+      "repository": "Ronak77/Generate-Yearly-Report-Dispatcher",
+      "source_commit": "075e62d38de71183668ce174af1408884f2355e6",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "GetAppCredentials.xaml: unclassified activity <GetRobotCredential> (Get credentials)",
+        "GetAppCredentials.xaml: unclassified activity <Catch> (Catch)",
+        "GetAppCredentials.xaml: unclassified activity <GetSecureCredential> (Get secure credential)",
+        "GetAppCredentials.xaml: unclassified activity <RequestCredential> (Request credentials)",
+        "GetAppCredentials.xaml: unclassified activity <AddCredential> (Add Credential)",
+        "GetAppCredentials.xaml: unclassified activity <InvokeMethod> (Invoke method (AppendChar))",
+        "GetTransactionData.xaml: unclassified activity <UiElementExists> (Element Exists 'A  https://acme-test.ui...')",
+        "InitAllSettings.xaml: unclassified activity <Catch> (Catch)",
+        "InitAllSettings.xaml: unclassified activity <Catch> (Catch)",
+        "KillAllProcesses.xaml: unclassified activity <KillProcess> (Kill Process)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <FlowDecision> (Retry transaction?)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <FlowDecision> (Success)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "TakeScreenshot.xaml: unclassified activity <TakeScreenshot> (Take screenshot)",
+        "TakeScreenshot.xaml: unclassified activity <CreateDirectory> (Create directory)",
+        "TakeScreenshot.xaml: unclassified activity <SaveImage> (Save screenshot)",
+        "Main.xaml: unclassified activity <ShouldStop> (Check Stop Signal)",
+        "Main.xaml: unclassified activity <Catch> (Catch)",
+        "Main.xaml: unclassified activity <Transition> (New Transaction)",
+        "Main.xaml: unclassified activity <Transition> (No Data)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Process.xaml: unclassified activity <Comment> (Comment (placeholder))",
+        "Process.xaml: unclassified activity <OnUiElementAppear> (On Element Appear 'A  https://acme-test.ui...')",
+        "System1_Login.xaml: unclassified activity <TypeSecureText> (Type Secure Text 'INPUT  password')",
+        "System1_Login.xaml: unclassified activity <UiElementExists> (Element Exists 'H1')",
+        "RunAllTests.xaml: unclassified activity <CreateFile> (Create Log file)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line (Header top) )",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line  (Header intormation))",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line (Header bottom) )",
+        "RunAllTests.xaml: unclassified activity <AddDataColumn> (Add Status column)",
+        "RunAllTests.xaml: unclassified activity <AddDataColumn> (Add Comments column)",
+        "RunAllTests.xaml: unclassified activity <Catch> (Catch)",
+        "RunAllTests.xaml: unclassified activity <Catch> (Catch)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line (Footer top) )",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line (Summary))",
+        "RunAllTests_Logging.xaml: unclassified activity <AppendLine> (Append line (Pass))",
+        "RunAllTests_Logging.xaml: unclassified activity <AppendLine> (Append line (Fail))",
+        "CloseAllApplications.xaml: invokes 'System1\\System1_Close.xaml' which was not found in the uploaded package",
+        "InitAllApplications.xaml: invokes 'System1\\System1_Login.xaml' which was not found in the uploaded package",
+        "InitAllApplications.xaml: invokes 'System1\\Navigate_WorkItems.xaml' which was not found in the uploaded package",
+        "Main.xaml: invokes 'Framework\\GetTransactionData.xaml' which was not found in the uploaded package",
+        "System1_Login.xaml: invokes 'Framework\\GetAppCredentials.xaml' which was not found in the uploaded package",
+        "RunAllTests.xaml: invokes '[Row(\"WorkflowFile\").ToString]' which was not found in the uploaded package",
+        "RunAllTests.xaml: invokes 'Tests\\RunAllTests_Logging.xaml' which was not found in the uploaded package",
+        "TestWorkflowTemplate.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package"
+      ],
+      "workflows": 17,
+      "systems": [
+        "Unidentified UI Application",
+        "Excel"
+      ],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "MEDIUM",
+          "score": 45,
+          "confidence": "MEDIUM"
+        },
+        "determinism_value": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "blast_radius": {
+          "level": "MEDIUM",
+          "score": 45,
+          "confidence": "MEDIUM"
+        },
+        "reversibility": {
+          "level": "LOW",
+          "score": 25,
+          "confidence": "LOW"
+        },
+        "compliance_sensitivity": {
+          "level": "LOW",
+          "score": 10,
+          "confidence": "LOW"
+        },
+        "observability": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "LOW",
+          "score": 16,
+          "confidence": "HIGH"
+        },
+        "data_readiness": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "AUGMENTED_RPA",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is MEDIUM: Some signals suggest ambiguity or judgment in this process, but the evidence is limited.",
+          "Execution Tool Readiness is LOW: Execution depends significantly on UI automation that is not encapsulated as a reusable, bounded tool.",
+          "Evolution Value score: 36/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "No risk constraint currently caps the recommendation below Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "NOT_READY",
+            "text": "No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is available yet; any UI automation present is not encapsulated as a reusable, bounded tool. Handing ambiguous authority to an agent without a dependable way to act is not safe yet."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "No technical rollback path was detected, and business reversibility has not been confirmed."
+          },
+          {
+            "type": "BLOCKED",
+            "text": "The process depends on many external systems/components, increasing coordination risk for autonomous execution."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "This process can mutate production state, but critical enterprise risk factors (customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process) have not been supplied. Full autonomy cannot be justified until impact, compliance, and reversibility are confirmed."
+          }
+        ],
+        "missing_evidence": [
+          "Reversibility: only low-confidence/inferred evidence available",
+          "Compliance Sensitivity: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "UNSTABLE_UI_DEPENDENCY",
+          "POOR_REVERSIBILITY",
+          "ARCHITECTURE_LIMITATION",
+          "INSUFFICIENT_BUSINESS_CONTEXT"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 0.1083503520000022
+    },
+    {
+      "benchmark_id": "R02",
+      "repository": "whooaaapppp/yearlyreport-performer",
+      "source_commit": "ad5b1b37157d52e13a4071df74393f0fe701dcd2",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "SendEmail.xaml: unclassified activity <SendMail> (Send SMTP Mail Message)",
+        "GetAppCredentials.xaml: unclassified activity <GetRobotCredential> (Get Orchestrator Credential)",
+        "GetAppCredentials.xaml: unclassified activity <Catch> (Catch)",
+        "GetAppCredentials.xaml: unclassified activity <GetSecureCredential> (Get secure credential)",
+        "GetAppCredentials.xaml: unclassified activity <RequestCredential> (Request Credential)",
+        "GetAppCredentials.xaml: unclassified activity <AddCredential> (Add Credential)",
+        "GetAppCredentials.xaml: unclassified activity <InvokeMethod> (Invoke AppendChar)",
+        "GetTransactionData.xaml: unclassified activity <GetQueueItem> (Get Transaction Item)",
+        "InitAllSettings.xaml: unclassified activity <Catch> (Catch)",
+        "InitAllSettings.xaml: unclassified activity <Catch> (Catch)",
+        "KillAllProcesses.xaml: unclassified activity <KillProcess> (Kill Process IE)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <FlowDecision> (Success)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "TakeScreenshot.xaml: unclassified activity <TakeScreenshot> (Take screenshot)",
+        "TakeScreenshot.xaml: unclassified activity <CreateDirectory> (Create directory)",
+        "TakeScreenshot.xaml: unclassified activity <SaveImage> (Save screenshot)",
+        "Main.xaml: unclassified activity <ShouldStop> (Check Stop Signal)",
+        "Main.xaml: unclassified activity <Catch> (Catch)",
+        "Main.xaml: unclassified activity <Transition> (New Transaction)",
+        "Main.xaml: unclassified activity <Transition> (No Data)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "System1_CreateYearlyReport.xaml: unclassified activity <UiElementExists> (Element Exists Report Not Found)",
+        "System1_CreateYearlyReport.xaml: unclassified activity <ReadCsvFile> (Read Monthly CSV Report)",
+        "System1_CreateYearlyReport.xaml: unclassified activity <MergeDataTable> (Merge Data Table)",
+        "System1_CreateYearlyReport.xaml: unclassified activity <OnUiElementAppear> (On Element Appear Finish Download)",
+        "System1_CreateYearlyReport.xaml: unclassified activity <Delete> (Delete Monthly Report)",
+        "System1_ExtractVendorInformation.xaml: unclassified activity <GetValue> (Highlight Vendor Information Block)",
+        "System1_Login.xaml: unclassified activity <TypeSecureText> (Type Secure Text Password)",
+        "System1_Login.xaml: unclassified activity <UiElementExists> (Element Exists 'H1')",
+        "System1_NavigateTo_WIDetails.xaml: unclassified activity <NavigateTo> (Navigate To)",
+        "System1_UploadYearlyReport.xaml: unclassified activity <GetValue> (Get Text Report Uploaded with ID)",
+        "RunAllTests.xaml: unclassified activity <CreateFile> (Create Log file)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line )",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line )",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line )",
+        "RunAllTests.xaml: unclassified activity <AddDataColumn> (Add Status column)",
+        "RunAllTests.xaml: unclassified activity <AddDataColumn> (Add Comments column)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line PASS)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line FAIL)",
+        "RunAllTests.xaml: unclassified activity <Catch> (Catch)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line PASS)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line FAIL)",
+        "RunAllTests.xaml: unclassified activity <Catch> (Catch)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line PASS)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line FAIL)",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line )",
+        "RunAllTests.xaml: unclassified activity <AppendLine> (Append line Summary)",
+        "SendEmail.xaml: invokes 'Framework\\GetAppCredentials.xaml' which was not found in the uploaded package",
+        "CloseAllApplications.xaml: invokes 'System1\\System1_Close.xaml' which was not found in the uploaded package",
+        "InitAllApplications.xaml: invokes 'System1\\System1_Login.xaml' which was not found in the uploaded package",
+        "Main.xaml: invokes 'Framework\\GetTransactionData.xaml' which was not found in the uploaded package",
+        "Process.xaml: invokes 'System1\\System1_NavigateTo_WIDetails.xaml' which was not found in the uploaded package",
+        "Process.xaml: invokes 'System1\\System1_ExtractVendorInformation.xaml' which was not found in the uploaded package",
+        "Process.xaml: invokes 'System1\\System1_NavigateTo_Dashboard.xaml' which was not found in the uploaded package",
+        "Process.xaml: invokes 'System1\\System1_NavigateTo_MonthlyReport.xaml' which was not found in the uploaded package",
+        "Process.xaml: invokes 'System1\\System1_CreateYearlyReport.xaml' which was not found in the uploaded package",
+        "Process.xaml: invokes 'System1\\System1_NavigateTo_UploadYearlyReport.xaml' which was not found in the uploaded package",
+        "Process.xaml: invokes 'System1\\System1_UploadYearlyReport.xaml' which was not found in the uploaded package",
+        "Process.xaml: invokes 'System1\\System1_UpdateWorkItem.xaml' which was not found in the uploaded package",
+        "System1_Login.xaml: invokes 'Framework\\GetAppCredentials.xaml' which was not found in the uploaded package",
+        "System1_Login.xaml: invokes 'Common\\SendEmail.xaml' which was not found in the uploaded package",
+        "RunAllTests.xaml: invokes '[row(\"WorkflowFile\").ToString]' which was not found in the uploaded package",
+        "_Test.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package"
+      ],
+      "workflows": 24,
+      "systems": [
+        "Excel",
+        "Unidentified UI Application"
+      ],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "MEDIUM",
+          "score": 45,
+          "confidence": "MEDIUM"
+        },
+        "determinism_value": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "blast_radius": {
+          "level": "MEDIUM",
+          "score": 45,
+          "confidence": "MEDIUM"
+        },
+        "reversibility": {
+          "level": "LOW",
+          "score": 25,
+          "confidence": "LOW"
+        },
+        "compliance_sensitivity": {
+          "level": "MEDIUM",
+          "score": 50,
+          "confidence": "MEDIUM"
+        },
+        "observability": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "data_readiness": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "AUGMENTED_RPA",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is MEDIUM: Some signals suggest ambiguity or judgment in this process, but the evidence is limited.",
+          "Execution Tool Readiness is LOW: Execution depends significantly on UI automation that is not encapsulated as a reusable, bounded tool.",
+          "Evolution Value score: 36/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "No risk constraint currently caps the recommendation below Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "NOT_READY",
+            "text": "No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is available yet; any UI automation present is not encapsulated as a reusable, bounded tool. Handing ambiguous authority to an agent without a dependable way to act is not safe yet."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "No technical rollback path was detected, and business reversibility has not been confirmed."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "Compliance-sensitive terminology was detected but not confirmed by Business Context."
+          },
+          {
+            "type": "BLOCKED",
+            "text": "The process depends on many external systems/components, increasing coordination risk for autonomous execution."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "This process can mutate production state, but critical enterprise risk factors (customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process) have not been supplied. Full autonomy cannot be justified until impact, compliance, and reversibility are confirmed."
+          }
+        ],
+        "missing_evidence": [
+          "Reversibility: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "UNSTABLE_UI_DEPENDENCY",
+          "POOR_REVERSIBILITY",
+          "COMPLIANCE_RESTRICTION",
+          "ARCHITECTURE_LIMITATION",
+          "INSUFFICIENT_BUSINESS_CONTEXT"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 1.310774281999997
+    },
+    {
+      "benchmark_id": "R03",
+      "repository": "agussaputran/bi-kurs-web-scrape",
+      "source_commit": "6926a40bf78366ccf12f10fd276dd99caa81f97e",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "Main.xaml: unclassified activity <UiElementExists> (Element Exists 'TH')",
+        "Main.xaml: unclassified activity <GetValue> (Get Text 'Nilai')",
+        "Main.xaml: unclassified activity <GetValue> (Get Text 'Kurs Jual')",
+        "Main.xaml: unclassified activity <GetValue> (Get Text 'Kurs Beli')"
+      ],
+      "workflows": 1,
+      "systems": [
+        "Excel"
+      ],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "LOW",
+          "score": 3,
+          "confidence": "MEDIUM"
+        },
+        "determinism_value": {
+          "level": "HIGH",
+          "score": 97,
+          "confidence": "MEDIUM"
+        },
+        "blast_radius": {
+          "level": "LOW",
+          "score": 35,
+          "confidence": "MEDIUM"
+        },
+        "reversibility": {
+          "level": "LOW",
+          "score": 25,
+          "confidence": "LOW"
+        },
+        "compliance_sensitivity": {
+          "level": "LOW",
+          "score": 10,
+          "confidence": "LOW"
+        },
+        "observability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "data_readiness": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "HIGH",
+          "score": 85,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "LOW",
+          "score": 30,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "AUGMENTED_RPA",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is LOW: Little evidence of ambiguity, judgment, or unstructured input was found; this looks like a rule-driven process.",
+          "Execution Tool Readiness is LOW: INSUFFICIENT EVIDENCE \u2014 no API, database, queue, or UI-automation activities detected",
+          "Evolution Value score: 19/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "No risk constraint currently caps the recommendation below Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "NOT_READY",
+            "text": "No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is available yet; any UI automation present is not encapsulated as a reusable, bounded tool. Handing ambiguous authority to an agent without a dependable way to act is not safe yet."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "No technical rollback path was detected, and business reversibility has not been confirmed."
+          },
+          {
+            "type": "NOT_READY",
+            "text": "Incorrect autonomous behavior would not be reliably or quickly detected."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "This process can mutate production state, but critical enterprise risk factors (customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process) have not been supplied. Full autonomy cannot be justified until impact, compliance, and reversibility are confirmed."
+          }
+        ],
+        "missing_evidence": [
+          "Reversibility: only low-confidence/inferred evidence available",
+          "Compliance Sensitivity: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "UNSTABLE_UI_DEPENDENCY",
+          "POOR_REVERSIBILITY",
+          "WEAK_OBSERVABILITY",
+          "INSUFFICIENT_BUSINESS_CONTEXT"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 0.26110742500000583
+    },
+    {
+      "benchmark_id": "R04",
+      "repository": "AsmaTrabelsi/RPA-Excel-Data-Entry-Automation",
+      "source_commit": "6722da1831f356e992700f72d6e95c39b231e0a1",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "DesktopCapturing.xaml: unclassified activity <NApplicationCard> (Use Application: RPA Complete Bootcamp : Sample Desktop App)",
+        "DesktopCapturing.xaml: unclassified activity <NTypeInto> (Type First Name)",
+        "DesktopCapturing.xaml: unclassified activity <NTypeInto> (Type Into 'Last Name')",
+        "DesktopCapturing.xaml: unclassified activity <NClick> (Click Male)",
+        "DesktopCapturing.xaml: unclassified activity <NClick> (Click 'Female')",
+        "DesktopCapturing.xaml: unclassified activity <NTypeInto> (Type Address)",
+        "DesktopCapturing.xaml: unclassified activity <NTypeInto> (Type City)",
+        "DesktopCapturing.xaml: unclassified activity <NSelectItem> (Select state)",
+        "DesktopCapturing.xaml: unclassified activity <NTypeInto> (Type Home Phone)",
+        "DesktopCapturing.xaml: unclassified activity <NTypeInto> (Type Work Phone)",
+        "DesktopCapturing.xaml: unclassified activity <NTypeInto> (Type Personal Email)",
+        "DesktopCapturing.xaml: unclassified activity <NTypeInto> (Type Work Email)",
+        "DesktopCapturing.xaml: unclassified activity <NClick> (Click Save Button)",
+        "WebDataCapturing.xaml: unclassified activity <Comment> (Comment)",
+        "WebDataCapturing.xaml: unclassified activity <NApplicationCard> (Use Browser Edge: CRM)",
+        "WebDataCapturing.xaml: unclassified activity <NTypeInto> (Type First name)",
+        "WebDataCapturing.xaml: unclassified activity <NTypeInto> (Type Last Name)",
+        "WebDataCapturing.xaml: unclassified activity <NClick> (Click Male)",
+        "WebDataCapturing.xaml: unclassified activity <NClick> (Click Female)",
+        "WebDataCapturing.xaml: unclassified activity <NTypeInto> (Type Address)",
+        "WebDataCapturing.xaml: unclassified activity <NTypeInto> (Type City)",
+        "WebDataCapturing.xaml: unclassified activity <NSelectItem> (Select State)",
+        "WebDataCapturing.xaml: unclassified activity <NTypeInto> (Type Home phone)",
+        "WebDataCapturing.xaml: unclassified activity <NTypeInto> (Type Work phone)",
+        "WebDataCapturing.xaml: unclassified activity <NTypeInto> (Type Personal email)",
+        "WebDataCapturing.xaml: unclassified activity <NTypeInto> (Type Work email)"
+      ],
+      "workflows": 3,
+      "systems": [
+        "Excel"
+      ],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "LOW",
+          "score": 6,
+          "confidence": "MEDIUM"
+        },
+        "determinism_value": {
+          "level": "HIGH",
+          "score": 94,
+          "confidence": "MEDIUM"
+        },
+        "blast_radius": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "reversibility": {
+          "level": "HIGH",
+          "score": 80,
+          "confidence": "MEDIUM"
+        },
+        "compliance_sensitivity": {
+          "level": "LOW",
+          "score": 10,
+          "confidence": "LOW"
+        },
+        "observability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "data_readiness": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "HIGH",
+          "score": 85,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "MEDIUM",
+          "score": 48,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "AUGMENTED_RPA",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is LOW: Little evidence of ambiguity, judgment, or unstructured input was found; this looks like a rule-driven process.",
+          "Execution Tool Readiness is LOW: INSUFFICIENT EVIDENCE \u2014 no API, database, queue, or UI-automation activities detected",
+          "Evolution Value score: 20/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "No risk constraint currently caps the recommendation below Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "NOT_READY",
+            "text": "No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is available yet; any UI automation present is not encapsulated as a reusable, bounded tool. Handing ambiguous authority to an agent without a dependable way to act is not safe yet."
+          },
+          {
+            "type": "NOT_READY",
+            "text": "Incorrect autonomous behavior would not be reliably or quickly detected."
+          }
+        ],
+        "missing_evidence": [
+          "Blast Radius: no evidence available",
+          "Compliance Sensitivity: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "UNSTABLE_UI_DEPENDENCY",
+          "WEAK_OBSERVABILITY"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 0.0664838729999957
+    },
+    {
+      "benchmark_id": "R05",
+      "repository": "abhi-sachdev20/uipath-employee-onboarding-ref",
+      "source_commit": "0cb5cb9bfd3e1ce9e54d168dd4cbfcebe20f978a",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "GetTransactionData.xaml: unclassified activity <GetQueueItem> (Get transaction item)",
+        "GetTransactionData.xaml: unclassified activity <Catch> (Catch)",
+        "InitAllSettings.xaml: unclassified activity <Catch> (Catch)",
+        "InitAllSettings.xaml: unclassified activity <Catch> (Catch)",
+        "Process.xaml: unclassified activity <CreateDirectory> (Create Employee Folder)",
+        "Process.xaml: unclassified activity <WriteTextFile> (Write Checklist to File)",
+        "Process.xaml: unclassified activity <AppendLine> (Append Line to CSV Log)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <FlowDecision> (Retry transaction?)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <FlowDecision> (Is successful?)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "TakeScreenshot.xaml: unclassified activity <TakeScreenshot> (Take screenshot)",
+        "TakeScreenshot.xaml: unclassified activity <CreateDirectory> (Create directory)",
+        "TakeScreenshot.xaml: unclassified activity <SaveImage> (Save screenshot)",
+        "Main.xaml: unclassified activity <ShouldStop> (Check Stop Signal)",
+        "Main.xaml: unclassified activity <Catch> (Catch)",
+        "Main.xaml: unclassified activity <Transition> (New Transaction)",
+        "Main.xaml: unclassified activity <Transition> (No Data)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "GetTransactionDataTestCase.xaml: unclassified activity <VerifyExpression> (Verify if transaction item was retrieved)",
+        "GetTransactionDataTestCase.xaml: unclassified activity <SetTransactionProgress> (Set transaction item progress to tested)",
+        "InitAllSettingsTestCase.xaml: unclassified activity <Comment> (Prerequisites)",
+        "InitAllSettingsTestCase.xaml: unclassified activity <VerifyExpressionWithOperator> (Verify if Config was loaded)",
+        "InitAllSettingsTestCase.xaml: unclassified activity <VerifyExpression> (Verify if setting exists in Config)",
+        "MainTestCase.xaml: unclassified activity <Comment> (Prerequisites)",
+        "MainTestCase.xaml: unclassified activity <VerifyExpressionWithOperator> (Verify if result data count matches expected data count)",
+        "WorkflowTestCaseTemplate.xaml: unclassified activity <Comment> (Actions to be performed)",
+        "Main.xaml: invokes 'Framework\\GetTransactionData.xaml' which was not found in the uploaded package",
+        "GetTransactionDataTestCase.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package",
+        "GetTransactionDataTestCase.xaml: invokes 'Framework/GetTransactionData.xaml' which was not found in the uploaded package",
+        "InitAllApplicationsTestCase.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package",
+        "InitAllApplicationsTestCase.xaml: invokes 'Framework/InitAllApplications.xaml' which was not found in the uploaded package",
+        "InitAllApplicationsTestCase.xaml: invokes 'Framework\\CloseAllApplications.xaml' which was not found in the uploaded package",
+        "InitAllSettingsTestCase.xaml: invokes 'Framework/InitAllSettings.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\InitAllApplications.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\GetTransactionData.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\Process.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\CloseAllApplications.xaml' which was not found in the uploaded package",
+        "WorkflowTestCaseTemplate.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package"
+      ],
+      "workflows": 16,
+      "systems": [
+        "Excel"
+      ],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "MEDIUM",
+          "score": 45,
+          "confidence": "MEDIUM"
+        },
+        "determinism_value": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "blast_radius": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "reversibility": {
+          "level": "HIGH",
+          "score": 80,
+          "confidence": "MEDIUM"
+        },
+        "compliance_sensitivity": {
+          "level": "LOW",
+          "score": 10,
+          "confidence": "LOW"
+        },
+        "observability": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "data_readiness": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "AUGMENTED_RPA",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is MEDIUM: Some signals suggest ambiguity or judgment in this process, but the evidence is limited.",
+          "Execution Tool Readiness is LOW: INSUFFICIENT EVIDENCE \u2014 no API, database, queue, or UI-automation activities detected",
+          "Evolution Value score: 36/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "No risk constraint currently caps the recommendation below Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "NOT_READY",
+            "text": "No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is available yet; any UI automation present is not encapsulated as a reusable, bounded tool. Handing ambiguous authority to an agent without a dependable way to act is not safe yet."
+          },
+          {
+            "type": "BLOCKED",
+            "text": "The process depends on many external systems/components, increasing coordination risk for autonomous execution."
+          }
+        ],
+        "missing_evidence": [
+          "Blast Radius: no evidence available",
+          "Compliance Sensitivity: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "UNSTABLE_UI_DEPENDENCY",
+          "ARCHITECTURE_LIMITATION"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 0.2370584239999971
+    },
+    {
+      "benchmark_id": "R06",
+      "repository": "mohammedraees07/invoice-automation-uipath",
+      "source_commit": "1f9c085d5cde3f3f853137b86e506a27973c4c2f",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "Main.xaml: unclassified activity <BuildDataTable> (Build Data Table)",
+        "Main.xaml: unclassified activity <LoadImage> (Load Image)",
+        "Main.xaml: unclassified activity <UiPathScreenOCR> (UiPath Screen OCR)",
+        "Main.xaml: unclassified activity <Matches> (Find Matching Patterns)",
+        "Main.xaml: unclassified activity <Matches> (Find Matching Patterns)",
+        "Main.xaml: unclassified activity <Matches> (Find Matching Patterns)",
+        "Main.xaml: unclassified activity <Matches> (Find Matching Patterns)",
+        "Main.xaml: unclassified activity <AddDataRow> (Add Data Row)",
+        "Main.xaml: unclassified activity <MoveFile> (Move File)",
+        "Main.xaml: unclassified activity <Catch> (Catch)",
+        "Main.xaml: unclassified activity <MoveFile> (Move File)",
+        "Main.xaml: unclassified activity <ExcelProcessScopeX> (Excel Process Scope)",
+        "Main.xaml: unclassified activity <ExcelApplicationCard> (Use Excel File)",
+        "Main.xaml: unclassified activity <WriteRangeX> (Write DataTable to Excel)",
+        "Main.xaml: unclassified activity <AutoFitX> (Autofit Range)",
+        "Main.xaml: unclassified activity <FormatRangeX> (Format Cells)"
+      ],
+      "workflows": 1,
+      "systems": [],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "LOW",
+          "score": 3,
+          "confidence": "MEDIUM"
+        },
+        "determinism_value": {
+          "level": "HIGH",
+          "score": 97,
+          "confidence": "MEDIUM"
+        },
+        "blast_radius": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "reversibility": {
+          "level": "HIGH",
+          "score": 80,
+          "confidence": "MEDIUM"
+        },
+        "compliance_sensitivity": {
+          "level": "LOW",
+          "score": 10,
+          "confidence": "LOW"
+        },
+        "observability": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "data_readiness": {
+          "level": "MEDIUM",
+          "score": 50,
+          "confidence": "LOW"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "LOW",
+          "score": 30,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "AUGMENTED_RPA",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is LOW: Little evidence of ambiguity, judgment, or unstructured input was found; this looks like a rule-driven process.",
+          "Execution Tool Readiness is LOW: INSUFFICIENT EVIDENCE \u2014 no API, database, queue, or UI-automation activities detected",
+          "Evolution Value score: 20/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "No risk constraint currently caps the recommendation below Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "NOT_READY",
+            "text": "No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is available yet; any UI automation present is not encapsulated as a reusable, bounded tool. Handing ambiguous authority to an agent without a dependable way to act is not safe yet."
+          }
+        ],
+        "missing_evidence": [
+          "Blast Radius: no evidence available",
+          "Compliance Sensitivity: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "UNSTABLE_UI_DEPENDENCY"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 0.2172588920000038
+    },
+    {
+      "benchmark_id": "R07",
+      "repository": "balasaravanan-dev/UiPath-InvoiceProcessingAutomationWorkflow",
+      "source_commit": "abefff3cdcfc91b98f6f478a2dde2694e25a1ce2",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "Main.xaml: unclassified activity <ReadPDFText> (Read PDF Text)",
+        "Main.xaml: unclassified activity <ExtractPDFText> (Extract PDF Text)",
+        "Main.xaml: unclassified activity <Matches> (Find Matching Patterns)",
+        "Main.xaml: unclassified activity <Matches> (Find Matching Patterns)",
+        "Main.xaml: unclassified activity <Matches> (Find Matching Patterns)",
+        "Main.xaml: unclassified activity <MessageBox> (Message Box)",
+        "Main.xaml: unclassified activity <ExcelProcessScopeX> (Excel Process Scope)",
+        "Main.xaml: unclassified activity <ExcelApplicationCard> (Use Excel File)",
+        "Main.xaml: unclassified activity <WriteCellX> (Write Cell)",
+        "Main.xaml: unclassified activity <WriteCellX> (Write Cell)",
+        "Main.xaml: unclassified activity <WriteCellX> (Write Cell)"
+      ],
+      "workflows": 1,
+      "systems": [],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "determinism_value": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "LOW"
+        },
+        "blast_radius": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "reversibility": {
+          "level": "HIGH",
+          "score": 80,
+          "confidence": "MEDIUM"
+        },
+        "compliance_sensitivity": {
+          "level": "LOW",
+          "score": 10,
+          "confidence": "LOW"
+        },
+        "observability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "data_readiness": {
+          "level": "MEDIUM",
+          "score": 50,
+          "confidence": "LOW"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "HIGH",
+          "score": 85,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "MEDIUM",
+          "score": 54,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "AUGMENTED_RPA",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is LOW: INSUFFICIENT EVIDENCE \u2014 no branching, review checkpoints, interpretive naming, or unstructured input detected",
+          "Execution Tool Readiness is LOW: INSUFFICIENT EVIDENCE \u2014 no API, database, queue, or UI-automation activities detected",
+          "Evolution Value score: 24/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "No risk constraint currently caps the recommendation below Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "NOT_READY",
+            "text": "No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is available yet; any UI automation present is not encapsulated as a reusable, bounded tool. Handing ambiguous authority to an agent without a dependable way to act is not safe yet."
+          },
+          {
+            "type": "NOT_READY",
+            "text": "Incorrect autonomous behavior would not be reliably or quickly detected."
+          }
+        ],
+        "missing_evidence": [
+          "Blast Radius: no evidence available",
+          "Compliance Sensitivity: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "UNSTABLE_UI_DEPENDENCY",
+          "WEAK_OBSERVABILITY"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 0.0350803009999936
+    },
+    {
+      "benchmark_id": "R08",
+      "repository": "Rotomator/email-automation",
+      "source_commit": "2746a7264dd7f5fc420f53cf8c4fa4f52deaa2b4",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "BackUp.xaml: unclassified activity <Reference> (Reference)",
+        "BackUp.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "BackUp.xaml: unclassified activity <Catch> (Catch)",
+        "BackUp.xaml: unclassified activity <AppendLine> (Append Line)",
+        "BackUp.xaml: unclassified activity <Reference> (Reference)",
+        "BackUp.xaml: unclassified activity <Reference> (Reference)",
+        "BackUp.xaml: unclassified activity <Reference> (Reference)",
+        "BackUp.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "BackUp.xaml: unclassified activity <Catch> (Catch)",
+        "BackUp.xaml: unclassified activity <AppendLine> (Append Line)",
+        "BackUp.xaml: unclassified activity <Reference> (Reference)",
+        "CheckConfig.xaml: unclassified activity <AppendLine> (Append Line)",
+        "Dictionary2DT.xaml: unclassified activity <BuildDataTable> (Build Data Table)",
+        "Dictionary2DT.xaml: unclassified activity <GetFromDictionary> (Get from dictionary)",
+        "Dictionary2DT.xaml: unclassified activity <AddDataColumn> (Add Data Column)",
+        "EmailResponse.xaml: unclassified activity <ReadTextFile> (ReadTextFile)",
+        "EmailResponse.xaml: unclassified activity <SendOutlookMail> (Send Outlook Mail Message)",
+        "EmailResponse.xaml: unclassified activity <ReadTextFile> (ReadTextFile)",
+        "EmailResponse.xaml: unclassified activity <SendOutlookMail> (Send Outlook Mail Message)",
+        "FaceAuthentication.xaml: unclassified activity <PythonScope> (Python Scope)",
+        "FaceAuthentication.xaml: unclassified activity <LoadScript> (Load Python Script)",
+        "FaceAuthentication.xaml: unclassified activity <InvokeMethod> (Invoke Init Method)",
+        "FaceAuthentication.xaml: unclassified activity <Catch> (Catch)",
+        "FaceAuthentication.xaml: unclassified activity <MessageBox> (Message Box)",
+        "FaceAuthentication.xaml: unclassified activity <InvokeMethod> (Invoke Run Method)",
+        "FaceAuthentication.xaml: unclassified activity <Catch> (Catch)",
+        "FaceAuthentication.xaml: unclassified activity <MessageBox> (Message Box)",
+        "FaceAuthentication.xaml: unclassified activity <GetObject> (Get Python Object)",
+        "FaceAuthentication.xaml: unclassified activity <DeserializeJson> (Deserialize JSON)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <PythonScope> (Python Scope)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <LoadScript> (Load Python Script)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <InvokeMethod> (Invoke Init Method)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <Catch> (Catch)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <MessageBox> (Message Box)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <InvokeMethod> (Invoke Run Method)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <Catch> (Catch)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <MessageBox> (Message Box)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <GetObject> (Get Python Object)",
+        "FaceAuthenticationSetup.xaml: unclassified activity <DeserializeJson> (Deserialize JSON)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <Reference> (Reference)",
+        "MailWorkflow.xaml: unclassified activity <AddDataRow> (Add Data Row)",
+        "MailWorkflow.xaml: unclassified activity <Catch> (Catch)",
+        "Main Setup FaceID.xaml: unclassified activity <Reference> (Reference)",
+        "Main Setup FaceID.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "Main Setup FaceID.xaml: unclassified activity <Catch> (Catch)",
+        "Main Setup FaceID.xaml: unclassified activity <AppendLine> (Append Line)",
+        "Main Setup FaceID.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "Main.xaml: unclassified activity <Catch> (Catch)",
+        "Main.xaml: unclassified activity <AppendLine> (Append Line)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Python.xaml: unclassified activity <PythonScope> (Python Scope)",
+        "Python.xaml: unclassified activity <LoadScript> (Load Python Script)",
+        "Python.xaml: unclassified activity <InvokeMethod> (Invoke Init Method)",
+        "Python.xaml: unclassified activity <Catch> (Catch)",
+        "Python.xaml: unclassified activity <InvokeMethod> (Invoke Run Method)",
+        "Python.xaml: unclassified activity <Catch> (Catch)",
+        "Python.xaml: unclassified activity <GetObject> (Get Python Object)",
+        "Python.xaml: unclassified activity <DeserializeJson> (Deserialize JSON)",
+        "ReadJSON.xaml: unclassified activity <ReadTextFile> (Read Text File)",
+        "ReadJSON.xaml: unclassified activity <DeserializeJson> (Deserialize JSON)",
+        "CheckConfig.xaml: invokes 'ReadJson.xaml' which was not found in the uploaded package"
+      ],
+      "workflows": 11,
+      "systems": [
+        "Email",
+        "Excel"
+      ],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "LOW",
+          "score": 39,
+          "confidence": "MEDIUM"
+        },
+        "determinism_value": {
+          "level": "MEDIUM",
+          "score": 61,
+          "confidence": "MEDIUM"
+        },
+        "blast_radius": {
+          "level": "MEDIUM",
+          "score": 45,
+          "confidence": "MEDIUM"
+        },
+        "reversibility": {
+          "level": "LOW",
+          "score": 25,
+          "confidence": "LOW"
+        },
+        "compliance_sensitivity": {
+          "level": "LOW",
+          "score": 10,
+          "confidence": "LOW"
+        },
+        "observability": {
+          "level": "MEDIUM",
+          "score": 46,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "data_readiness": {
+          "level": "MEDIUM",
+          "score": 50,
+          "confidence": "LOW"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "AUGMENTED_RPA",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is LOW: Little evidence of ambiguity, judgment, or unstructured input was found; this looks like a rule-driven process.",
+          "Execution Tool Readiness is LOW: INSUFFICIENT EVIDENCE \u2014 no API, database, queue, or UI-automation activities detected",
+          "Evolution Value score: 40/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "Although the process's evolution-value profile alone would support Hybrid Agent, risk constraints cap the safe target at Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "NOT_READY",
+            "text": "No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is available yet; any UI automation present is not encapsulated as a reusable, bounded tool. Handing ambiguous authority to an agent without a dependable way to act is not safe yet."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "No technical rollback path was detected, and business reversibility has not been confirmed."
+          },
+          {
+            "type": "BLOCKED",
+            "text": "The process depends on many external systems/components, increasing coordination risk for autonomous execution."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "This process can mutate production state, but critical enterprise risk factors (customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process) have not been supplied. Full autonomy cannot be justified until impact, compliance, and reversibility are confirmed."
+          }
+        ],
+        "missing_evidence": [
+          "Reversibility: only low-confidence/inferred evidence available",
+          "Compliance Sensitivity: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "UNSTABLE_UI_DEPENDENCY",
+          "POOR_REVERSIBILITY",
+          "ARCHITECTURE_LIMITATION",
+          "INSUFFICIENT_BUSINESS_CONTEXT"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 0.7637438010000039
+    },
+    {
+      "benchmark_id": "R09",
+      "repository": "Manyong1204/uipath-ai-customer-service-automation",
+      "source_commit": "34bf276ef4b157b9fed7e223130f6a4d8af8ad82",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "01_\uc74c\uc131\ud14d\uc2a4\ud2b8\ubcc0\ud658.xaml: unclassified activity <Reference> (Reference)",
+        "01_\uc74c\uc131\ud14d\uc2a4\ud2b8\ubcc0\ud658.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "01_\uc74c\uc131\ud14d\uc2a4\ud2b8\ubcc0\ud658.xaml: unclassified activity <BuildDataTable> (Build Data Table)",
+        "01_\uc74c\uc131\ud14d\uc2a4\ud2b8\ubcc0\ud658.xaml: unclassified activity <GetRobotCredential> (Get Credential)",
+        "01_\uc74c\uc131\ud14d\uc2a4\ud2b8\ubcc0\ud658.xaml: unclassified activity <ForEachFileX> (For Each File In Folder)",
+        "01_\uc74c\uc131\ud14d\uc2a4\ud2b8\ubcc0\ud658.xaml: unclassified activity <DeserializeJson> (Deserialize JSON)",
+        "01_\uc74c\uc131\ud14d\uc2a4\ud2b8\ubcc0\ud658.xaml: unclassified activity <AddDataRow> (Add Data Row)",
+        "02_AI\ubd84\uc11d.xaml: unclassified activity <Reference> (Reference)",
+        "02_AI\ubd84\uc11d.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "02_AI\ubd84\uc11d.xaml: unclassified activity <Reference> (Reference)",
+        "02_AI\ubd84\uc11d.xaml: unclassified activity <Reference> (Reference)",
+        "02_AI\ubd84\uc11d.xaml: unclassified activity <Reference> (Reference)",
+        "02_AI\ubd84\uc11d.xaml: unclassified activity <Reference> (Reference)",
+        "02_AI\ubd84\uc11d.xaml: unclassified activity <Reference> (Reference)",
+        "03_\uae34\uae09\ud310\uc815, \uc751\ub300\uac00\uc774\ub4dc.xaml: unclassified activity <Reference> (Reference)",
+        "03_\uae34\uae09\ud310\uc815, \uc751\ub300\uac00\uc774\ub4dc.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "03_\uae34\uae09\ud310\uc815, \uc751\ub300\uac00\uc774\ub4dc.xaml: unclassified activity <Reference> (Reference)",
+        "03_\uae34\uae09\ud310\uc815, \uc751\ub300\uac00\uc774\ub4dc.xaml: unclassified activity <Reference> (Reference)",
+        "03_\uae34\uae09\ud310\uc815, \uc751\ub300\uac00\uc774\ub4dc.xaml: unclassified activity <Reference> (Reference)",
+        "03_\uae34\uae09\ud310\uc815, \uc751\ub300\uac00\uc774\ub4dc.xaml: unclassified activity <Reference> (Reference)",
+        "04_HTML \ub300\uc2dc\ubcf4\ub4dc \ubc0f \uc774\uba54\uc77c \ubc1c\uc1a1.xaml: unclassified activity <Reference> (Reference)",
+        "04_HTML \ub300\uc2dc\ubcf4\ub4dc \ubc0f \uc774\uba54\uc77c \ubc1c\uc1a1.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "04_HTML \ub300\uc2dc\ubcf4\ub4dc \ubc0f \uc774\uba54\uc77c \ubc1c\uc1a1.xaml: unclassified activity <WriteTextFile> (Write Text File)",
+        "04_HTML \ub300\uc2dc\ubcf4\ub4dc \ubc0f \uc774\uba54\uc77c \ubc1c\uc1a1.xaml: unclassified activity <GetRobotCredential> (Get Credential)",
+        "04_HTML \ub300\uc2dc\ubcf4\ub4dc \ubc0f \uc774\uba54\uc77c \ubc1c\uc1a1.xaml: unclassified activity <InvokeCode> (Invoke Code)",
+        "04_HTML \ub300\uc2dc\ubcf4\ub4dc \ubc0f \uc774\uba54\uc77c \ubc1c\uc1a1.xaml: unclassified activity <Catch> (Catch)",
+        "04_HTML \ub300\uc2dc\ubcf4\ub4dc \ubc0f \uc774\uba54\uc77c \ubc1c\uc1a1.xaml: unclassified activity <MessageBox> (Message Box)",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <Reference> (Reference)",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NApplicationCard> (Chrome NAVER)",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NClick> (Click ''NAVER\ub85c\uadf8\uc778'')",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NTypeInto> (Type Into ''\uc544\uc774\ub514 \ub610\ub294 \uc804\ud654\ubc88\ud638'')",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NClick> (Click '\ube44\ubc00\ubc88\ud638')",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NTypeInto> (Type Into ''\ube44\ubc00\ubc88\ud638'')",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NClick> (Click ''\ub85c\uadf8\uc778'')",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NCheckState> (Check App State '2\ub2e8\uacc4 \uc778\uc99d \uc54c\ub9bc \ubc1c\uc1a1 \uc644\ub8cc')",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NApplicationCard> (Use Browser Chrome: \ubc1b\uc740\uba54\uc77c\ud568(10551) : \ub124\uc774\ubc84 \uba54\uc77c)",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NTypeInto> (Type Into 'INPUT search')",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NClick> (Click '\uac80\uc0c9')",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <NClick> (Click '\uc804\ub2ec')",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <FlowStep> (FlowStep)",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <GetRobotCredential> (Get Credential)",
+        "05_\uba54\uc77c \ud655\uc778.xaml: unclassified activity <GetRobotCredential> (Get Credential)"
+      ],
+      "workflows": 6,
+      "systems": [
+        "https://api.openai.com/v1/audio/transcriptions",
+        "Excel"
+      ],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        },
+        "determinism_value": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "LOW"
+        },
+        "blast_radius": {
+          "level": "MEDIUM",
+          "score": 45,
+          "confidence": "MEDIUM"
+        },
+        "reversibility": {
+          "level": "LOW",
+          "score": 25,
+          "confidence": "LOW"
+        },
+        "compliance_sensitivity": {
+          "level": "MEDIUM",
+          "score": 60,
+          "confidence": "MEDIUM"
+        },
+        "observability": {
+          "level": "HIGH",
+          "score": 78,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "data_readiness": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "HIGH",
+          "score": 90,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "HYBRID_AGENT",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is LOW: INSUFFICIENT EVIDENCE \u2014 no branching, review checkpoints, interpretive naming, or unstructured input detected",
+          "Execution Tool Readiness is HIGH: Reliable, bounded execution surfaces (APIs, databases, queues, or reusable UiPath subprocesses) are available for most integration points.",
+          "Evolution Value score: 11/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "No risk constraint currently caps the recommendation below Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "UNKNOWN",
+            "text": "No technical rollback path was detected, and business reversibility has not been confirmed."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "Compliance-sensitive terminology was detected but not confirmed by Business Context."
+          },
+          {
+            "type": "BLOCKED",
+            "text": "The process depends on many external systems/components, increasing coordination risk for autonomous execution."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "This process can mutate production state, but critical enterprise risk factors (customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process) have not been supplied. Full autonomy cannot be justified until impact, compliance, and reversibility are confirmed."
+          }
+        ],
+        "missing_evidence": [
+          "Reversibility: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "POOR_REVERSIBILITY",
+          "COMPLIANCE_RESTRICTION",
+          "ARCHITECTURE_LIMITATION",
+          "INSUFFICIENT_BUSINESS_CONTEXT"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 0.16250017599999467
+    },
+    {
+      "benchmark_id": "R10",
+      "repository": "BhargavPrashant/SAP_Automation",
+      "source_commit": "922247c695d1e8bbfd7b86eafc38465ba37b86be",
+      "parser_outcome": "PARSED",
+      "parser_warnings": [
+        "CloseAllApplications.xaml: unclassified activity <CVScope> (CV Screen Scope  TallyPrime gracefull closing)",
+        "CloseAllApplications.xaml: unclassified activity <CvClickWithDescriptor> (CV Click - CloseButton)",
+        "GetTransactionData.xaml: unclassified activity <Catch> (Catch)",
+        "InitAllApplications.xaml: unclassified activity <CVScope> (cv screen scope tally prime login)",
+        "InitAllApplications.xaml: unclassified activity <CvElementExistsWithDescriptor> (CV Element Exists - gateway of tally)",
+        "InitAllSettings.xaml: unclassified activity <Catch> (Catch)",
+        "InitAllSettings.xaml: unclassified activity <Catch> (Catch)",
+        "KillAllProcesses.xaml: unclassified activity <KillProcess> (Kill Process - Tally Prime)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <FlowDecision> (Retry transaction?)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "RetryCurrentTransaction.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <FlowDecision> (Is successful?)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "SetTransactionStatus.xaml: unclassified activity <Reference> (Reference)",
+        "TakeScreenshot.xaml: unclassified activity <TakeScreenshot> (Take screenshot)",
+        "TakeScreenshot.xaml: unclassified activity <CreateDirectory> (Create directory)",
+        "TakeScreenshot.xaml: unclassified activity <SaveImage> (Save screenshot)",
+        "Main.xaml: unclassified activity <ShouldStop> (Check Stop Signal)",
+        "Main.xaml: unclassified activity <Catch> (Catch)",
+        "Main.xaml: unclassified activity <Transition> (New Transaction)",
+        "Main.xaml: unclassified activity <Transition> (No Data)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Main.xaml: unclassified activity <Reference> (Reference)",
+        "Process.xaml: unclassified activity <ReadCsvFile> (Read CSV)",
+        "Process.xaml: unclassified activity <LookupDataTable> (Lookup master data table)",
+        "Process.xaml: unclassified activity <ReadRow> (Read master row)",
+        "Process.xaml: unclassified activity <IfElseIf> (Else If ( based on clients ))",
+        "Process.xaml: unclassified activity <IfElseIf> (if gst or not)",
+        "Process.xaml: unclassified activity <CVScope> (CV Screen Scope address pop up)",
+        "Process.xaml: unclassified activity <CvClickWithDescriptor> (CV Click - Text)",
+        "Process.xaml: unclassified activity <IfElseIf> (Else If - tax)",
+        "Process.xaml: unclassified activity <IfElseIf> (Else If ( based on clients))",
+        "Process.xaml: unclassified activity <CVScope> (CV Screen Scope override)",
+        "Process.xaml: unclassified activity <CvElementExistsWithDescriptor> (CV Element Exists - Text)",
+        "Process.xaml: unclassified activity <ExcelProcessScopeX> (cleaning data)",
+        "Process.xaml: unclassified activity <ExcelApplicationCard> (Use Excel File)",
+        "Process.xaml: unclassified activity <DeleteSheetX> (Delete Sheet)",
+        "ReadDataFromFolder.xaml: unclassified activity <ForEachFileX> (For Each invoice in Folder)",
+        "ReadDataFromFolder.xaml: unclassified activity <Catch> (Catch)",
+        "ReadDataFromFolder.xaml: unclassified activity <Catch> (Catch)",
+        "GeneralTestCase.xaml: unclassified activity <Catch> (Catch)",
+        "GeneralTestCase.xaml: unclassified activity <Catch> (Catch)",
+        "GeneralTestCase.xaml: unclassified activity <VerifyExpressionWithOperator> (Verify if Output is the ExpectedException)",
+        "GetTransactionDataTestCase.xaml: unclassified activity <VerifyExpression> (Verify if transaction item was retrieved)",
+        "GetTransactionDataTestCase.xaml: unclassified activity <SetTransactionProgress> (Set transaction item progress to tested)",
+        "InitAllSettingsTestCase.xaml: unclassified activity <Comment> (Prerequisites)",
+        "InitAllSettingsTestCase.xaml: unclassified activity <VerifyExpressionWithOperator> (Verify if Config was loaded)",
+        "InitAllSettingsTestCase.xaml: unclassified activity <VerifyExpression> (Verify if setting exists in Config)",
+        "MainTestCase.xaml: unclassified activity <Comment> (Prerequisites)",
+        "MainTestCase.xaml: unclassified activity <VerifyExpressionWithOperator> (Verify if result data count matches expected data count)",
+        "WorkflowTestCaseTemplate.xaml: unclassified activity <Comment> (Actions to be performed)",
+        "Main.xaml: invokes 'Framework\\GetTransactionData.xaml' which was not found in the uploaded package",
+        "GeneralTestCase.xaml: invokes '[in_WorkflowFile]' which was not found in the uploaded package",
+        "GetTransactionDataTestCase.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package",
+        "GetTransactionDataTestCase.xaml: invokes 'Framework/GetTransactionData.xaml' which was not found in the uploaded package",
+        "InitAllApplicationsTestCase.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package",
+        "InitAllApplicationsTestCase.xaml: invokes 'Framework/InitAllApplications.xaml' which was not found in the uploaded package",
+        "InitAllApplicationsTestCase.xaml: invokes 'Framework\\CloseAllApplications.xaml' which was not found in the uploaded package",
+        "InitAllSettingsTestCase.xaml: invokes 'Framework/InitAllSettings.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\InitAllApplications.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\GetTransactionData.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\Process.xaml' which was not found in the uploaded package",
+        "ProcessTestCase.xaml: invokes 'Framework\\CloseAllApplications.xaml' which was not found in the uploaded package",
+        "WorkflowTestCaseTemplate.xaml: invokes 'Framework\\InitAllSettings.xaml' which was not found in the uploaded package"
+      ],
+      "workflows": 18,
+      "systems": [
+        "Unidentified UI Application",
+        "Excel"
+      ],
+      "scores": {
+        "current_ai_usage": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "reasoning_opportunity": {
+          "level": "MEDIUM",
+          "score": 42,
+          "confidence": "MEDIUM"
+        },
+        "determinism_value": {
+          "level": "MEDIUM",
+          "score": 58,
+          "confidence": "MEDIUM"
+        },
+        "blast_radius": {
+          "level": "MEDIUM",
+          "score": 45,
+          "confidence": "MEDIUM"
+        },
+        "reversibility": {
+          "level": "LOW",
+          "score": 25,
+          "confidence": "LOW"
+        },
+        "compliance_sensitivity": {
+          "level": "MEDIUM",
+          "score": 40,
+          "confidence": "LOW"
+        },
+        "observability": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "execution_tool_readiness": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "HIGH"
+        },
+        "data_readiness": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "human_approval_need": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "MEDIUM"
+        },
+        "exception_complexity": {
+          "level": "MEDIUM",
+          "score": 55,
+          "confidence": "MEDIUM"
+        },
+        "dependency_complexity": {
+          "level": "HIGH",
+          "score": 100,
+          "confidence": "HIGH"
+        },
+        "runtime_stability": {
+          "level": "LOW",
+          "score": 0,
+          "confidence": "LOW"
+        }
+      },
+      "recommendation": {
+        "current_state": "DETERMINISTIC_RPA",
+        "recommended_state": "AUGMENTED_RPA",
+        "maximum_safe_state": "AUGMENTED_RPA",
+        "next_possible_state": "HYBRID_AGENT",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "confidence": "LOW",
+        "why_this": [
+          "Reasoning Opportunity is MEDIUM: Some signals suggest ambiguity or judgment in this process, but the evidence is limited.",
+          "Execution Tool Readiness is LOW: Execution depends significantly on UI automation that is not encapsulated as a reusable, bounded tool.",
+          "Evolution Value score: 34/100 (composite of reasoning opportunity, exception-handling ambiguity, unstructured-data reliance, and manual-intervention volume).",
+          "No risk constraint currently caps the recommendation below Augmented RPA."
+        ],
+        "why_not_further": [
+          {
+            "type": "NOT_READY",
+            "text": "No reliable, bounded execution surface (API, database, queue, or reusable subprocess) is available yet; any UI automation present is not encapsulated as a reusable, bounded tool. Handing ambiguous authority to an agent without a dependable way to act is not safe yet."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "No technical rollback path was detected, and business reversibility has not been confirmed."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "Compliance-sensitive terminology was detected but not confirmed by Business Context."
+          },
+          {
+            "type": "BLOCKED",
+            "text": "The process depends on many external systems/components, increasing coordination risk for autonomous execution."
+          },
+          {
+            "type": "UNKNOWN",
+            "text": "This process can mutate production state, but critical enterprise risk factors (customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process) have not been supplied. Full autonomy cannot be justified until impact, compliance, and reversibility are confirmed."
+          }
+        ],
+        "missing_evidence": [
+          "Reversibility: only low-confidence/inferred evidence available",
+          "Compliance Sensitivity: only low-confidence/inferred evidence available",
+          "Runtime Stability: no evidence available",
+          "Business Context: customer_impact, financial_impact, legal_regulatory_impact, maximum_scope, irreversible_action, mandatory_approval, regulated_process not supplied"
+        ],
+        "constraints": [
+          "UNSTABLE_UI_DEPENDENCY",
+          "POOR_REVERSIBILITY",
+          "COMPLIANCE_RESTRICTION",
+          "ARCHITECTURE_LIMITATION",
+          "INSUFFICIENT_BUSINESS_CONTEXT"
+        ]
+      },
+      "architecture_result": "NOT_RECORDED (requires platform catalog; out of scope for blind v1)",
+      "seconds": 0.31805661799999996
+    }
+  ]
+}
