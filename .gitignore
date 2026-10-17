@@ -22,3 +22,5 @@ apps/web/next-env.d.ts
 # Env
 .env
 .env.local
+
+benchmark/cache/
