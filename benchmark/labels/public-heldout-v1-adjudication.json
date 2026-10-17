@@ -1,0 +1,17 @@
+{
+  "status": "product-team adjudication of blind-v1 disagreements; NOT independent. No Morphline rule has been changed.",
+  "cases": {
+    "R01": {"class": ["MORPHLINE_LIKELY_WRONG", "TAXONOMY_AMBIGUITY"], "note": "Morphline reported Evolution Value 11-ish/100 yet recommended AUGMENTED_RPA: engine._desired_state returns AUGMENTED whenever tool/data readiness is not LOW, independent of value. A low-value deterministic dispatcher should stay DETERMINISTIC_RPA per the product thesis. One-level difference, no autonomy increase in practice."},
+    "R02": {"class": ["MORPHLINE_LIKELY_WRONG", "TAXONOMY_AMBIGUITY"], "note": "Same readiness-driven AUGMENTED floor as R01."},
+    "R03": {"class": ["MORPHLINE_LIKELY_WRONG", "TAXONOMY_AMBIGUITY"], "note": "Reasoning LOW, AI usage LOW, yet AUGMENTED. UI brittleness correctly yields UNSTABLE_UI_DEPENDENCY, but that should not raise the recommended state."},
+    "R04": {"class": ["MORPHLINE_LIKELY_WRONG", "TAXONOMY_AMBIGUITY"], "note": "Same as R03."},
+    "R05": {"class": ["MORPHLINE_LIKELY_WRONG", "TAXONOMY_AMBIGUITY"], "note": "Reasoning scored MEDIUM, likely driven by REFramework template branching/BusinessRuleException structure rather than a judgment surface (label: explicit validation rules are not reasoning opportunity). Needs per-evidence trace before attributing."},
+    "R10": {"class": ["MORPHLINE_LIKELY_WRONG", "TAXONOMY_AMBIGUITY"], "note": "Reasoning scored MEDIUM on a deterministic REFramework UI bot; same suspected template-branching inflation as R05."},
+    "R09": {"class": ["PARSER_LIMITATION", "MORPHLINE_LIKELY_WRONG", "NEEDS_HUMAN_ADJUDICATION"], "note": "Morphline scored reasoning LOW ('no branching, review checkpoints, interpretive naming, or unstructured input detected') and current_ai_usage LOW although the project makes 13 HttpClient calls to OpenAI STT/GenAI endpoints with ~17 Ifs. HTTP-based GenAI is invisible to the AI-usage and reasoning scorers; many activities unclassified. The label itself needs adjudication: current state is already GenAI-augmented, so AUGMENTED_RPA may be acceptable (see disagreements_allowed)."}
+  },
+  "global_findings": [
+    "On this corpus Morphline's recommended state was AUGMENTED_RPA for all 10 projects, i.e. it behaved as a constant predictor and did not separate deterministic, hard-negative and hard-positive cases.",
+    "Parser emits ~4.6 warnings per workflow (unclassified activities, e.g. HttpClient, BuildDataTable, GetRobotCredential, UiPathScreenOCR): real-world parser coverage is shallow even though every project 'parsed'.",
+    "'unknown_preservation' = 100% is weak evidence: Morphline reports LOW confidence everywhere, so it cannot distinguish projects where context truly matters."
+  ]
+}

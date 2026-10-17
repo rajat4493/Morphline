@@ -1,0 +1,9 @@
+{
+  "benchmark_id": "",
+  "labeler_id": "",
+  "label_status": "independent_expert_label",
+  "observable": {"current_state": "", "implementation_style": "", "technologies": [], "execution_surfaces": [], "existing_ai_usage": "", "structured_vs_unstructured_input": "", "evidence": "", "confidence": ""},
+  "expert_architecture": {"reasoning_opportunity": "LOW|MEDIUM|HIGH|UNKNOWN", "recommended_state": "", "recommended_pattern": "", "maximum_safe_state_if_knowable": "UNKNOWN", "why_this": "", "why_not_further": "", "label_confidence": "", "max_safe_confidence": ""},
+  "enterprise_safety": {"customer_impact": "UNKNOWN", "financial_impact": "UNKNOWN", "legal_regulatory_impact": "UNKNOWN", "irreversible_action": "UNKNOWN", "mandatory_approval": "UNKNOWN", "sensitive_data": "UNKNOWN", "production_blast_radius": "UNKNOWN"},
+  "notes": ""
+}

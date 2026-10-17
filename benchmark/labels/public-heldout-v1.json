@@ -1,0 +1,738 @@
+{
+  "schema_version": 1,
+  "corpus_version": "public-heldout-v1",
+  "status": "provisional_expert_label",
+  "note": "Authored by the product team AFTER blind v1 results were frozen. NOT ground truth. Requires independent expert review. enterprise_safety fields default to UNKNOWN: public source cannot establish them.",
+  "labels": [
+    {
+      "benchmark_id": "R01",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "reframework",
+        "dispatcher",
+        "queue",
+        "excel",
+        "ui-heavy",
+        "deterministic",
+        "reasoning-light",
+        "held-out",
+        "reporting"
+      ],
+      "observable": {
+        "current_state": "DETERMINISTIC_RPA",
+        "implementation_style": "REFramework dispatcher",
+        "technologies": [
+          "UiPath REFramework",
+          "Excel",
+          "Orchestrator queue"
+        ],
+        "execution_surfaces": [
+          "ui",
+          "excel",
+          "queue"
+        ],
+        "existing_ai_usage": "none",
+        "structured_vs_unstructured_input": "structured",
+        "queue_usage": true,
+        "api_usage": false,
+        "ui_usage": true,
+        "ml_or_genai_usage": "none",
+        "evidence": "BusinessRuleException x19, AddQueueItem x5, ReadRange/ForEachRow; no ML/AI/HTTP activities in xaml.",
+        "confidence": "HIGH"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "LOW",
+        "recommended_state": "DETERMINISTIC_RPA",
+        "recommended_pattern": "KEEP_DETERMINISTIC_RPA",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "Structured dispatch/transaction preparation; no interpretive surface."
+        ],
+        "why_not_further": [
+          "UI fragility is an integration/modernization concern, not an agentic opportunity."
+        ],
+        "label_confidence": "HIGH",
+        "disagreements_allowed": [],
+        "adjudication_notes": ""
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    },
+    {
+      "benchmark_id": "R02",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "reframework",
+        "performer",
+        "queue",
+        "excel",
+        "mail",
+        "ui-heavy",
+        "deterministic",
+        "reasoning-light",
+        "held-out",
+        "reporting"
+      ],
+      "observable": {
+        "current_state": "DETERMINISTIC_RPA",
+        "implementation_style": "REFramework performer",
+        "technologies": [
+          "REFramework",
+          "Excel",
+          "Mail",
+          "Orchestrator queue"
+        ],
+        "execution_surfaces": [
+          "ui",
+          "excel",
+          "mail",
+          "queue"
+        ],
+        "existing_ai_usage": "none",
+        "structured_vs_unstructured_input": "structured",
+        "queue_usage": true,
+        "api_usage": false,
+        "ui_usage": true,
+        "ml_or_genai_usage": "none",
+        "evidence": "ui:Click x174, TypeInto x24, SendMail x5, Regex x3; no AI activities.",
+        "confidence": "HIGH"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "LOW",
+        "recommended_state": "DETERMINISTIC_RPA",
+        "recommended_pattern": "KEEP_DETERMINISTIC_RPA",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "Deterministic transaction execution."
+        ],
+        "why_not_further": [
+          "No evidence of a judgment surface."
+        ],
+        "label_confidence": "HIGH",
+        "disagreements_allowed": [],
+        "adjudication_notes": ""
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    },
+    {
+      "benchmark_id": "R03",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "sequence",
+        "excel",
+        "ui-heavy",
+        "web-ui",
+        "nupkg",
+        "deterministic",
+        "reasoning-light",
+        "held-out",
+        "data-entry"
+      ],
+      "observable": {
+        "current_state": "DETERMINISTIC_RPA",
+        "implementation_style": "Single-sequence web scrape",
+        "technologies": [
+          "Excel",
+          "UI Automation"
+        ],
+        "execution_surfaces": [
+          "web-ui",
+          "excel"
+        ],
+        "existing_ai_usage": "none",
+        "structured_vs_unstructured_input": "structured",
+        "queue_usage": false,
+        "api_usage": false,
+        "ui_usage": true,
+        "ml_or_genai_usage": "none",
+        "evidence": "Single Main.xaml: ui:Click x18, TypeInto x4, ReadRange; ships a published .nupkg.",
+        "confidence": "HIGH"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "LOW",
+        "recommended_state": "DETERMINISTIC_RPA",
+        "recommended_pattern": "KEEP_DETERMINISTIC_RPA",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "Scrape + structured extraction is deterministic."
+        ],
+        "why_not_further": [
+          "Brittle UI is a modernization concern, not proof of an agentic need."
+        ],
+        "label_confidence": "HIGH",
+        "disagreements_allowed": [],
+        "adjudication_notes": ""
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    },
+    {
+      "benchmark_id": "R04",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "sequence",
+        "excel",
+        "web-ui",
+        "desktop-ui",
+        "data-entry",
+        "deterministic",
+        "reasoning-light",
+        "held-out"
+      ],
+      "observable": {
+        "current_state": "DETERMINISTIC_RPA",
+        "implementation_style": "Excel-to-UI data entry",
+        "technologies": [
+          "Excel",
+          "UI Automation"
+        ],
+        "execution_surfaces": [
+          "web-ui",
+          "desktop-ui",
+          "excel"
+        ],
+        "existing_ai_usage": "none",
+        "structured_vs_unstructured_input": "structured",
+        "queue_usage": false,
+        "api_usage": false,
+        "ui_usage": true,
+        "ml_or_genai_usage": "none",
+        "evidence": "3 xaml (DesktopCapturing, WebDataCapturing, Main); ForEachRow over Excel rows.",
+        "confidence": "HIGH"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "LOW",
+        "recommended_state": "DETERMINISTIC_RPA",
+        "recommended_pattern": "KEEP_DETERMINISTIC_RPA",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "Classic deterministic data entry."
+        ],
+        "why_not_further": [
+          "API replacement may help robustness; not an agentic reasoning opportunity."
+        ],
+        "label_confidence": "HIGH",
+        "disagreements_allowed": [],
+        "adjudication_notes": ""
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    },
+    {
+      "benchmark_id": "R05",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "reframework",
+        "queue",
+        "excel",
+        "deterministic",
+        "reasoning-light",
+        "held-out",
+        "HR"
+      ],
+      "observable": {
+        "current_state": "DETERMINISTIC_RPA",
+        "implementation_style": "REFramework performer with explicit validation rules",
+        "technologies": [
+          "REFramework",
+          "Excel",
+          "Orchestrator queue"
+        ],
+        "execution_surfaces": [
+          "queue",
+          "excel"
+        ],
+        "existing_ai_usage": "none",
+        "structured_vs_unstructured_input": "structured",
+        "queue_usage": true,
+        "api_usage": false,
+        "ui_usage": false,
+        "ml_or_genai_usage": "none",
+        "evidence": "BusinessRuleException x23 over explicit field checks (ID, name, email format). Repo also contains the stock UiPath REFramework docs (359 md).",
+        "confidence": "HIGH"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "LOW",
+        "recommended_state": "DETERMINISTIC_RPA",
+        "recommended_pattern": "KEEP_DETERMINISTIC_RPA",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "Validation rules are explicit and deterministic."
+        ],
+        "why_not_further": [
+          "A business rule is not a reasoning opportunity."
+        ],
+        "label_confidence": "HIGH",
+        "disagreements_allowed": [],
+        "adjudication_notes": ""
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    },
+    {
+      "benchmark_id": "R06",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "sequence",
+        "excel",
+        "document-processing",
+        "OCR",
+        "invoice-processing",
+        "augmented-current",
+        "reasoning-light",
+        "hard-negative",
+        "held-out",
+        "finance"
+      ],
+      "observable": {
+        "current_state": "AUGMENTED_RPA",
+        "implementation_style": "Single-workflow OCR + regex invoice parser",
+        "technologies": [
+          "UiPath.OCR.Activities",
+          "Excel",
+          "Office365"
+        ],
+        "execution_surfaces": [
+          "file",
+          "ocr",
+          "excel"
+        ],
+        "existing_ai_usage": "OCR",
+        "structured_vs_unstructured_input": "unstructured-text input, regex-parsed",
+        "queue_usage": false,
+        "api_usage": false,
+        "ui_usage": false,
+        "ml_or_genai_usage": "OCR only (no ML/GenAI)",
+        "evidence": "README: OCR (Google/Tesseract) + regex parsing; Main.xaml Matches x24, Regex x6; no HTTP/LLM/DU activities.",
+        "confidence": "HIGH"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "LOW",
+        "recommended_state": "AUGMENTED_RPA",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "OCR is the only AI-like element; extraction after OCR is deterministic regex."
+        ],
+        "why_not_further": [
+          "No judgment beyond rule-based parsing; regex fragility is not agentic need."
+        ],
+        "label_confidence": "MEDIUM",
+        "disagreements_allowed": [
+          "DETERMINISTIC_RPA"
+        ],
+        "adjudication_notes": "Adjacent state D is defensible: OCR alone may not count as 'augmentation'. TAXONOMY_AMBIGUITY risk."
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    },
+    {
+      "benchmark_id": "R07",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "sequence",
+        "document-processing",
+        "excel",
+        "mail",
+        "invoice-processing",
+        "augmented-current",
+        "reasoning-light",
+        "hard-negative",
+        "held-out",
+        "finance"
+      ],
+      "observable": {
+        "current_state": "AUGMENTED_RPA",
+        "implementation_style": "Single Main.xaml, PDF text + regex; Document Understanding package referenced",
+        "technologies": [
+          "UiPath.DocumentUnderstanding",
+          "UiPath.PDF",
+          "Excel",
+          "Mail"
+        ],
+        "execution_surfaces": [
+          "pdf",
+          "excel"
+        ],
+        "existing_ai_usage": "DU package referenced; usage in xaml unconfirmed",
+        "structured_vs_unstructured_input": "semi-structured PDF text",
+        "queue_usage": false,
+        "api_usage": false,
+        "ui_usage": false,
+        "ml_or_genai_usage": "DU dependency (usage unverified)",
+        "evidence": "project.json lists DocumentUnderstanding.Activities, but Main.xaml shows ReadPDF x7, Matches x6, Regex x3 and no DU activity names; README claims DU. Brief's R07 'reasoning MEDIUM' not confirmed by source.",
+        "confidence": "MEDIUM"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "LOW_TO_MEDIUM",
+        "recommended_state": "AUGMENTED_RPA",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "Extraction may benefit from DU without agent-led orchestration."
+        ],
+        "why_not_further": [
+          "No evidence of a decision surface beyond field extraction."
+        ],
+        "label_confidence": "MEDIUM",
+        "disagreements_allowed": [
+          "DETERMINISTIC_RPA"
+        ],
+        "adjudication_notes": "SOURCE_EVIDENCE_INSUFFICIENT for DU usage. Brief provisionally said MEDIUM; source shows mostly regex."
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    },
+    {
+      "benchmark_id": "R08",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "reframework",
+        "email",
+        "ML",
+        "augmented-current",
+        "hard-negative",
+        "held-out",
+        "customer-service"
+      ],
+      "observable": {
+        "current_state": "AUGMENTED_RPA",
+        "implementation_style": "Workflow set invoking a Python sentiment model (pkl) via Python Scope",
+        "technologies": [
+          "UiPath.Python",
+          "Mail",
+          "Excel",
+          "WebAPI"
+        ],
+        "execution_surfaces": [
+          "python",
+          "mail",
+          "excel"
+        ],
+        "existing_ai_usage": "classical ML (sentiment classifier)",
+        "structured_vs_unstructured_input": "unstructured email text",
+        "queue_usage": false,
+        "api_usage": true,
+        "ui_usage": false,
+        "ml_or_genai_usage": "Classical ML sentiment (pkl) via Python Scope",
+        "evidence": "PythonScope x15, SendOutlook x10, Sentiment refs x6, 3 .py + 2 .pkl.",
+        "confidence": "HIGH"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "MEDIUM",
+        "recommended_state": "AUGMENTED_RPA",
+        "recommended_pattern": "RPA_WITH_AI_AUGMENTATION",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "ML is a discrete classifier step inside deterministic mail routing."
+        ],
+        "why_not_further": [
+          "Existing ML presence does not imply agentic need."
+        ],
+        "label_confidence": "HIGH",
+        "disagreements_allowed": [],
+        "adjudication_notes": ""
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    },
+    {
+      "benchmark_id": "R09",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "genAI",
+        "STT",
+        "email",
+        "customer-service",
+        "augmented-current",
+        "reasoning-heavy",
+        "hard-positive",
+        "held-out"
+      ],
+      "observable": {
+        "current_state": "AUGMENTED_RPA",
+        "implementation_style": "Pipeline: STT API -> GenAI classification/summary/sentiment -> urgency -> response guidance -> Excel/HTML/email",
+        "technologies": [
+          "WebAPI (HTTP) -> OpenAI",
+          "Excel",
+          "Mail"
+        ],
+        "execution_surfaces": [
+          "api",
+          "excel",
+          "mail"
+        ],
+        "existing_ai_usage": "GenAI (OpenAI) via HTTP",
+        "structured_vs_unstructured_input": "unstructured audio/text",
+        "queue_usage": false,
+        "api_usage": true,
+        "ui_usage": false,
+        "ml_or_genai_usage": "GenAI + STT via OpenAI HTTP API",
+        "evidence": "HttpClient x13, 'openai' refs, README documents classification/summary/sentiment/urgency/response-guidance with prompts and Orchestrator assets for keys.",
+        "confidence": "HIGH"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "HIGH",
+        "recommended_state": "HYBRID_AGENT",
+        "recommended_pattern": "DETERMINISTIC_WORKFLOW_WITH_AGENT_DECISION",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "Genuine semantic/interpretive decisions (classify, judge urgency, draft guidance)."
+        ],
+        "why_not_further": [
+          "Public code establishes nothing about customer impact, regulation, approval or reversibility; autonomy ceiling unknowable."
+        ],
+        "label_confidence": "HIGH",
+        "disagreements_allowed": [
+          "AUGMENTED_RPA"
+        ],
+        "adjudication_notes": "Label confidence HIGH on opportunity; LOW/UNKNOWN on production autonomy ceiling. Current state is already GenAI-augmented; whether 'recommended' differs from current is itself a taxonomy question."
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    },
+    {
+      "benchmark_id": "R10",
+      "label_status": "provisional_expert_label",
+      "authored_after_blind_run": true,
+      "tags": [
+        "real-public",
+        "uipath",
+        "reframework",
+        "ui-heavy",
+        "deterministic",
+        "reasoning-light",
+        "held-out",
+        "invoice-processing",
+        "finance"
+      ],
+      "observable": {
+        "current_state": "DETERMINISTIC_RPA",
+        "implementation_style": "REFramework UI automation into Tally Prime",
+        "technologies": [
+          "REFramework",
+          "Excel",
+          "UI Automation"
+        ],
+        "execution_surfaces": [
+          "desktop-ui",
+          "excel",
+          "queue"
+        ],
+        "existing_ai_usage": "none",
+        "structured_vs_unstructured_input": "structured",
+        "queue_usage": true,
+        "api_usage": false,
+        "ui_usage": true,
+        "ml_or_genai_usage": "none",
+        "evidence": "ui:TypeInto x168; project metadata 'Generating E-Invoices in Tally Prime' (repo name says SAP; repo contents govern).",
+        "confidence": "HIGH"
+      },
+      "expert_architecture": {
+        "reasoning_opportunity": "LOW",
+        "recommended_state": "DETERMINISTIC_RPA",
+        "recommended_pattern": "KEEP_DETERMINISTIC_RPA",
+        "maximum_safe_state_if_knowable": "UNKNOWN",
+        "why_this": [
+          "Deterministic UI-driven e-invoice generation."
+        ],
+        "why_not_further": [
+          "UI fragility is an integration problem, not agentic opportunity."
+        ],
+        "label_confidence": "HIGH",
+        "disagreements_allowed": [],
+        "adjudication_notes": ""
+      },
+      "enterprise_safety": {
+        "customer_impact": "UNKNOWN",
+        "financial_impact": "UNKNOWN",
+        "legal_regulatory_impact": "UNKNOWN",
+        "irreversible_action": "UNKNOWN",
+        "mandatory_approval": "UNKNOWN",
+        "sensitive_data": "UNKNOWN",
+        "production_blast_radius": "UNKNOWN"
+      },
+      "independent_experts": {
+        "expert_1": null,
+        "expert_2": null,
+        "expert_3": null,
+        "consensus_label": null,
+        "disagreement": null,
+        "adjudicated_by": null,
+        "adjudication_notes": null
+      }
+    }
+  ]
+}

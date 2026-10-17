@@ -1,5 +1,24 @@
 # Duck Handoff — Continuity Contract
 
+## CURRENT STATE (rewritten 2026-10-17; supersedes older "Last verified" claims below)
+
+- **Last verified commit:** the commit containing this block on branch `claude/new-session-ekr17k` (parent: `d15b5fd` benchmark harness; blind v1 results frozen in the commit before it).
+- **Tests:** `pytest -q` = **112 passed, 0 failed** (108 before this phase + 4 public-benchmark integrity tests).
+- **Product phase:** estate intelligence + transformation architecture (Phases 1-4) built; now in **empirical falsification** (benchmark phase). No async/Postgres/2nd vendor/auth work has started and none should.
+- **What is verified:** pipeline runs end to end on 10 unseen real public UiPath projects (0 parser exceptions); blind v1 frozen (`benchmark/results/public-heldout-blind-v1.json`, read-only); provisional labels (`benchmark/labels/public-heldout-v1.json`) authored after; report `benchmark/reports/public-heldout-v1.md`.
+- **Blind result (honest):** Morphline recommended AUGMENTED_RPA for **all 10** projects: 30% exact state, 100% adjacent, 30% exact pattern, 60% over-reach (all one level), 10% under-reach, hard-positive R09 **missed**. Identical to `ai_presence_heuristic` and `always_augmented`; **worse than `always_deterministic`** (60%) on this corpus. Synthetic 100% was a regression floor only.
+- **Root causes seen (UNFIXED, awaiting adjudication):** (1) `recommendation/engine.py::_desired_state` returns AUGMENTED whenever tool/data readiness != LOW, regardless of low Evolution Value; (2) HTTP-based GenAI (HttpClient to OpenAI) and Python-Scope ML are invisible to `current_ai_usage`/`reasoning_opportunity` (R08, R09); (3) ~4.6 parser warnings per workflow (unclassified activities); (4) REFramework template branching may inflate reasoning (R05, R10, R01, R02).
+- **Immediate current task:** human/independent adjudication of the disagreements (`benchmark/labels/public-heldout-v1-adjudication.json`); run the LLM baseline where `ANTHROPIC_API_KEY` exists (`python -m benchmark.public.llm_baseline`); recruit 2+ independent labelers using `benchmark/expert_review/`.
+- **What NOT to work on:** async jobs, Postgres, second RPA vendor, enterprise auth, UI polish. **Do not edit scoring/recommendation/parser rules** until adjudication is done; any fix must produce a separate `public-heldout-post-fix-v2` run. Never overwrite or regenerate `public-heldout-blind-v1.json`.
+- **Known benchmark limitations:** n=10; single hard positive; 6/10 deterministic (imbalance); labels are product-team-authored and provisional; LLM baseline not run (no API key); `unknown_preservation` 100% is weak (confidence LOW everywhere); R06/R07 are near-blank student projects; R07's Document Understanding usage is unverified in xaml; third-party source is not vendored (fetch with `python -m benchmark.public.fetch`).
+- **Reproduce:** `python -m benchmark.public.fetch && python -m benchmark.public.evaluate && python -m benchmark.public.report`.
+
+TheDuck learning: passing synthetic tests proves consistency, not correctness; fixtures used in development are a regression suite, not validation; hard negatives matter; freeze held-out outputs before changing the product; unknown business context is part of the answer; test for unsafe over-reach, not just accuracy.
+
+---
+
+*(Historical sections follow; their test counts and "last verified" lines are stale.)*
+
 **Purpose of this file:** let a coding agent with zero conversation history
 pick up exactly where the last one stopped. If you are that agent: read
 this file fully before reading anything else, including other docs.

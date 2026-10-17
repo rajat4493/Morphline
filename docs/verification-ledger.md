@@ -1,4 +1,23 @@
-# Verification Ledger — Estate Intelligence Phase
+# Verification Ledger
+
+## Public held-out benchmark phase (2026-10-17)
+
+| Item | Status | Evidence |
+|---|---|---|
+| 10 sources checked, SHAs pinned, licenses recorded | VERIFIED | `benchmark/public_manifest.json`, `python -m benchmark.public.fetch` asserts SHA |
+| Contamination check | VERIFIED (negative) | 0 name hits in git/docs; 0 xaml sha256 matches vs fixtures |
+| Blind v1 frozen before labels | VERIFIED | separate commit; read-only file; runner refuses overwrite (test) |
+| Labels separate, provisional, safety=UNKNOWN | VERIFIED | `tests/test_public_benchmark.py` |
+| Metrics incl. over/under-reach, hard pos/neg, UNKNOWN, parser coverage | VERIFIED | `benchmark/public/evaluate.py`, report |
+| LLM baseline | BLOCKED | no `ANTHROPIC_API_KEY`; runner + label-free packets ready |
+| Morphline credible on unseen real projects | **NOT SUPPORTED** | constant AUGMENTED output; R09 missed; loses to always_deterministic |
+| Unresolved disagreements | OPEN | R01-R05, R09, R10; see adjudication file. Do not change engine without adjudication |
+
+Full suite: **112 passed**.
+
+---
+
+# Estate Intelligence Phase (earlier)
 
 For each major capability introduced in the estate-intelligence phase: what
 was required, where it lives, what evidence backs the claim it works, and
