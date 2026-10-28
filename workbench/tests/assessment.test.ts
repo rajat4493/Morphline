@@ -56,3 +56,33 @@ describe("recommendation rules", () => {
     expect(assess(base()).inputHash).toBe(assess(base()).inputHash);
   });
 });
+
+describe("AI-labelled exception evidence (rules)", () => {
+  const item = (text: string, label: string, count: number, confidence = 90) => ({ text, count, source: "queue" as const, label, confidence, rationale: "", keywordLabel: label });
+  const withAi = (items: ReturnType<typeof item>[]) => base({ exceptionAi: { method: "llm", model: "m", items } });
+  it("needs a minimum sample before it may vote", () => {
+    const small = assess(withAi([item("Invoice layout not recognised", "document_input", 3)]));
+    expect(small.scores.ai_augmented).toBe(0);
+    expect(small.findings.find((f) => f.ruleId === "R15-ai-exception-mix")!.effect).toMatch(/sample too small/);
+    const big = assess(withAi([item("a", "document_input", 30), item("b", "document_input", 20)]));
+    expect(big.scores.ai_augmented).toBe(2);
+  });
+  it("ignores low-confidence labels and 'other_unclear'", () => {
+    const r = assess(withAi([item("a", "document_input", 40, 40), item("b", "other_unclear", 40)]));
+    expect(r.scores.ai_augmented).toBe(0);
+  });
+  it("is marked ai_inferred, never raises confidence, and leaves opportunity untouched", () => {
+    const off = assess(base({ queue: queue({ businessExceptionRate: 0.2 }) }));
+    const on = assess(withAi([item("a", "classification_ambiguity", 60), item("b", "classification_ambiguity", 40)]));
+    const onSame = assess({ ...withAi([item("a", "classification_ambiguity", 60), item("b", "classification_ambiguity", 40)]), queue: queue({ businessExceptionRate: 0.2 }) });
+    expect(onSame.findings.find((f) => f.ruleId === "R15-ai-exception-mix")!.provenance).toBe("ai_inferred");
+    expect(onSame.confidence).toBeLessThanOrEqual(off.confidence);
+    expect(onSame.opportunityScore).toBe(off.opportunityScore);
+    expect(on.rationale.join(" ")).toMatch(/\[AI-inferred\]/);
+  });
+  it("flags dominant reference-data exceptions as a data-quality risk, not an AI opportunity", () => {
+    const r = assess(withAi([item("Supplier not found", "reference_data_missing", 40), item("Vendor missing", "reference_data_missing", 30)]));
+    expect(r.riskFlags.join(" ")).toMatch(/DATA_QUALITY_EXCEPTIONS/);
+    expect(r.scores.ai_augmented + r.scores.hybrid).toBe(0);
+  });
+});

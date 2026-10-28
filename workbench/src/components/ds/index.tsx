@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Recommendation } from "@/assessment/types";
 import { Mark, MobileNav, ReadOnlyStatus, SidebarNav } from "./client";
+import { CATEGORY_INFO, type ExceptionCategory } from "@/ai/taxonomy";
 import { REC_META, SOURCE_LABEL, strengthOf } from "./meta";
 
 export { REC_META } from "./meta";
@@ -75,7 +76,7 @@ export function Health({ color, label }: { rate?: number; jobs?: number; color: 
 }
 
 /* ---------- Decision panel ---------- */
-export function DecisionPanel(p: { rec: string; confidence: number; opportunity: number; risk: number; evidenceCount: number; conclusion: string; runnerUp?: string | null; redesign?: boolean }) {
+export function DecisionPanel(p: { rec: string; confidence: number; opportunity: number; risk: number; evidenceCount: number; conclusion: string; runnerUp?: string | null; redesign?: boolean; aiInferred?: boolean }) {
   const m = REC_META[p.rec as Recommendation];
   const I = m.icon;
   return (
@@ -87,6 +88,7 @@ export function DecisionPanel(p: { rec: string; confidence: number; opportunity:
         <p className="decision-line">{p.conclusion}</p>
         <div className="decision-sub">
           {p.redesign && <StatusBadge tone="amber" icon={<AlertTriangle size={13} aria-hidden />}>Redesign review first</StatusBadge>}
+          {p.aiInferred && <StatusBadge tone="amber">Includes AI-inferred evidence</StatusBadge>}
           {p.runnerUp && <span>Runner-up: <RecBadge rec={p.runnerUp} /></span>}
           <a href="#tab-assessment">View rationale</a>
         </div>
@@ -101,13 +103,17 @@ export function DecisionPanel(p: { rec: string; confidence: number; opportunity:
 }
 
 /* ---------- Evidence / risk / coverage ---------- */
-export function EvidenceItem({ ev }: { ev: { id: string; ruleId: string; signal: string; observed: string; effect: string; weight: number; sourceEntity: string; sourceRefs: string[] } }) {
+type AiItem = { text: string; count: number; source: string; label: string; confidence: number; keywordLabel: string; rationale?: string };
+const catLabel = (c: string) => CATEGORY_INFO[c as ExceptionCategory]?.label ?? c;
+export function EvidenceItem({ ev }: { ev: { id: string; ruleId: string; signal: string; observed: string; effect: string; weight: number; sourceEntity: string; sourceRefs: string[]; provenance?: string; detail?: unknown } }) {
+  const ai = ev.provenance === "ai_inferred";
+  const items = ai && Array.isArray(ev.detail) ? (ev.detail as AiItem[]) : [];
   const s = strengthOf(ev);
   return (
     <details className="ev">
       <summary>
         <span className="mono badge outline">{ev.ruleId}</span>
-        <span className="ev-signal">{ev.signal}<span className="src"><FileText size={12} aria-hidden />{SOURCE_LABEL[ev.sourceEntity] ?? ev.sourceEntity}</span></span>
+        <span className="ev-signal"><span>{ev.signal}{ai && <> <StatusBadge tone="amber">AI-inferred</StatusBadge></>}</span><span className="src"><FileText size={12} aria-hidden />{SOURCE_LABEL[ev.sourceEntity] ?? ev.sourceEntity}</span></span>
         <span className="ev-outcome">{ev.effect}</span>
         <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <span className="strength" role="img" aria-label={`Strength: ${s.label}`} title={`Strength: ${s.label}`}>{[1, 2, 3].map((n) => <i key={n} className={s.level >= n ? "on" : ""} />)}</span>
@@ -116,8 +122,11 @@ export function EvidenceItem({ ev }: { ev: { id: string; ruleId: string; signal:
       </summary>
       <div className="ev-detail"><dl>
         <dt>Observed in data</dt><dd>{ev.observed}</dd><dt>Effect</dt><dd>{ev.effect}</dd><dt>Source</dt><dd>{SOURCE_LABEL[ev.sourceEntity] ?? ev.sourceEntity} <span className="mono muted">({ev.sourceEntity})</span></dd>
-        <dt>References</dt><dd className="mono">{ev.sourceRefs.join(", ") || "none"}</dd><dt>Stored weight</dt><dd className="mono">{ev.weight}</dd><dt>Rule</dt><dd className="mono">{ev.ruleId}</dd>
-      </dl></div>
+        <dt>References</dt><dd className="mono">{ev.sourceRefs.join(", ") || "none"}</dd><dt>Stored weight</dt><dd className="mono">{ev.weight}</dd><dt>Rule</dt><dd className="mono">{ev.ruleId}</dd><dt>Trust</dt><dd>{ai ? "AI-inferred: depends on model-labelled text; lower trust than rule-computed evidence." : "Deterministic: computed by rules from imported data."}</dd>
+      </dl>
+      {items.length > 0 && <div className="tablewrap"><p className="muted" style={{ margin: "0 0 8px", fontSize: 13 }}>Source texts exactly as classified (redacted before labelling). Compare the AI label with the keyword baseline.</p>
+        <table className="dt"><thead><tr><th scope="col">Exception text</th><th scope="col" className="num">Count</th><th scope="col">From</th><th scope="col">AI label</th><th scope="col" className="num">Conf.</th><th scope="col">Keyword baseline</th></tr></thead><tbody>
+          {items.map((i, k) => <tr key={k}><td>{i.text}</td><td className="num">{i.count}</td><td>{i.source === "queue" ? "Queue item" : "Job error"}</td><td>{catLabel(i.label)}</td><td className="num">{i.confidence}</td><td>{catLabel(i.keywordLabel)}{i.keywordLabel !== i.label && i.label !== "other_unclear" && i.keywordLabel !== "other_unclear" && <> <StatusBadge tone="amber">differs</StatusBadge></>}</td></tr>)}</tbody></table></div>}</div>
     </details>
   );
 }

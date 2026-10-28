@@ -98,7 +98,15 @@ export const assessmentEvidence = pgTable("assessment_evidence", {
   id: id(), tenantId: tenantId(), assessmentId: uuid("assessment_id").notNull().references(() => assessments.id, { onDelete: "cascade" }), ruleId: text("rule_id").notNull(),
   signal: text("signal").notNull(), observed: text("observed").notNull(), effect: text("effect").notNull(), weight: doublePrecision("weight").notNull(),
   sourceEntity: text("source_entity").notNull(), sourceRefs: jsonb("source_refs").$type<string[]>().notNull().default([]),
+  /** "deterministic" = computed by rules from imported data; "ai_inferred" = depends on model-labelled text (lower trust). */
+  provenance: text("provenance").notNull().default("deterministic"), detail: jsonb("detail").$type<unknown>(),
 });
+
+/** Cache of exception-text labels. Stores the REDACTED text that was classified, never the raw original. */
+export const exceptionClassifications = pgTable("exception_classifications", {
+  id: id(), tenantId: tenantId(), textHash: text("text_hash").notNull(), textRedacted: text("text_redacted").notNull(), label: text("label").notNull(), confidence: integer("confidence").notNull(),
+  method: text("method").notNull(), model: text("model").notNull(), promptVersion: text("prompt_version").notNull(), rationale: text("rationale").notNull().default(""), createdAt: createdAt(),
+}, (t) => [uniqueIndex("exc_cls_key").on(t.tenantId, t.textHash, t.method, t.model, t.promptVersion)]);
 
 export const migrationPlans = pgTable("migration_plans", {
   id: id(), tenantId: tenantId(), processId: uuid("process_id").notNull().references(() => automationProcesses.id, { onDelete: "cascade" }),

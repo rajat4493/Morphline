@@ -1,5 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { CheckCircle2, PlugZap, Play, XCircle, ShieldCheck } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { resolveClassifier } from "@/ai/config";
 import { ActionButton, ConnectorForm, FolderPicker } from "@/components/Actions";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ds";
 import * as s from "@/db/schema";
@@ -34,6 +36,10 @@ export default async function Connectors() {
             </section>
           );
         })}
+        <section className="panel panel-pad" aria-labelledby="ai-h"><h2 className="panel-title" id="ai-h"><Sparkles size={16} aria-hidden />AI evidence (exception labelling)</h2>
+          <p style={{ marginTop: 0 }}>Optional and off by default. When on, a model labels the text of top exception messages into a fixed set of categories. Labels appear as <b>AI-inferred, lower-trust evidence</b> with every source text shown. They never decide a recommendation, never raise confidence or opportunity, and a failure falls back to deterministic rules.</p>
+          <ul className="gaps"><li>Real connectors: {resolveClassifier({ isDemo: false }).status}</li><li>Demo connector: {resolveClassifier({ isDemo: true }).status}</li></ul>
+          <p className="muted" style={{ marginBottom: 0, fontSize: 13 }}>Data leaving the server when on: redacted exception texts only (emails, numbers, IDs, URLs, paths and token-like strings removed, 200 characters max), batched and cached. Configure with <span className="mono">MORPHLINE_AI_EVIDENCE=off|on|demo</span>. Redaction is best-effort; confirm it meets your data-handling policy before enabling.</p></section>
         <ConnectorForm />
         <section className="panel panel-pad" aria-labelledby="hist"><h2 className="panel-title" id="hist">Import history</h2>
           {runs.length === 0 ? <p className="muted" style={{ margin: 0 }}>No imports yet.</p> : <div className="tablewrap"><table className="dt"><thead><tr><th scope="col">Started</th><th scope="col">Connector</th><th scope="col">Status</th><th scope="col">Counts</th><th scope="col">Issues</th></tr></thead><tbody>

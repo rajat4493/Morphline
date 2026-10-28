@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { Db } from "@/db/client";
 import { assetMetadata, automationProcesses, executionJobs, folders, processVersions, queueSignals, queues, triggers } from "@/db/schema";
-import type { ProcessFacts } from "@/assessment/types";
+import type { ExceptionAiItem, ProcessFacts } from "@/assessment/types";
 import type { TenantContext } from "@/lib/tenant";
 
 const DAY = 86400_000;
@@ -46,7 +46,9 @@ function statsFor(b: Bundle, processId: string, now: number, windowDays: number)
   };
 }
 
-export async function buildAllFacts(db: Db, ctx: TenantContext, connectorId: string, windowDays = 90, now = Date.now()): Promise<ProcessFacts[]> {
+export type AiFacts = { method: string; model: string; byProcess: Map<string, ExceptionAiItem[]> };
+
+export async function buildAllFacts(db: Db, ctx: TenantContext, connectorId: string, windowDays = 90, now = Date.now(), ai?: AiFacts | null): Promise<ProcessFacts[]> {
   const b = await loadBundle(db, ctx, connectorId);
   const stats = new Map(b.procs.map((p) => [p.id, statsFor(b, p.id, now, windowDays)]));
   return b.procs.map((p): ProcessFacts => {
@@ -67,6 +69,7 @@ export async function buildAllFacts(db: Db, ctx: TenantContext, connectorId: str
       queue: sig && q ? { name: q.name, total: sig.total, successRate: sig.total ? sig.successful / sig.total : 0, businessExceptionRate: sig.total ? sig.businessExceptions / sig.total : 0, applicationExceptionRate: sig.total ? sig.applicationExceptions / sig.total : 0, abandonedRate: sig.total ? sig.abandoned / sig.total : 0, retriedRate: sig.total ? sig.retried / sig.total : 0, topReasons: sig.topErrorReasons } : null,
       folderAssets: { total: folderAssets.length, credentialLike: folderAssets.filter((a) => CREDENTIAL_TYPES.has(a.valueType.toLowerCase())).length },
       duplicatesOf: b.procs.filter((o) => o.id !== p.id && o.packageId === p.packageId).map((o) => ({ processName: o.name, jobs: stats.get(o.id)!.total, version: o.currentVersion })),
+      exceptionAi: ai && ai.byProcess.get(p.id) ? { method: ai.method, model: ai.model, items: ai.byProcess.get(p.id)! } : null,
       stableSiblingTools: siblings.map((o) => ({ name: o.name, s: stats.get(o.id)! })).filter((x) => x.s.total >= 30 && x.s.failureRate <= 0.1).map((x) => ({ name: x.name, failureRate: x.s.failureRate, jobs: x.s.total })),
     };
   });

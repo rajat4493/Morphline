@@ -5,7 +5,9 @@ import type { Db } from "@/db/client";
 import * as s from "@/db/schema";
 import { audit } from "@/lib/audit";
 import type { TenantContext } from "@/lib/tenant";
-import { buildAllFacts } from "./facts";
+import { resolveClassifier, type ResolvedAi } from "@/ai/config";
+import { buildAllFacts, type AiFacts } from "./facts";
+import { runExceptionAi } from "./exception-ai";
 import { buildConnector, getConnectorRow } from "./connectors";
 
 export const JOB_WINDOW_DAYS = 90;
@@ -13,7 +15,7 @@ const d = (x?: string) => (x ? new Date(x) : null);
 
 export type ImportSummary = { importRunId: string; status: "success" | "partial" | "failed"; counts: Record<string, number>; errors: EstateIssue[] };
 
-export async function runImport(db: Db, ctx: TenantContext, connectorId: string, overrides: { fetch?: typeof fetch; env?: Record<string, string | undefined>; connector?: EstateConnector } = {}): Promise<ImportSummary> {
+export async function runImport(db: Db, ctx: TenantContext, connectorId: string, overrides: { fetch?: typeof fetch; env?: Record<string, string | undefined>; connector?: EstateConnector; ai?: Pick<ResolvedAi, "classifier"> } = {}): Promise<ImportSummary> {
   const row = await getConnectorRow(db, ctx, connectorId);
   if (!row) throw new Error("Connector not found");
   const connector = overrides.connector ?? buildConnector(row, overrides);
@@ -106,12 +108,22 @@ export async function runImport(db: Db, ctx: TenantContext, connectorId: string,
       for (const a of assets) { await db.insert(s.dependencies).values({ tenantId: t, processId: p.id, kind: "asset", name: a.name, detail: `${a.valueType} asset in folder scope (usage by this process not determinable from API)`, origin: "folder_asset" }); counts.dependencies++; }
     }
 
+    // Optional AI evidence layer: label exception texts. Failure here never blocks the import (deterministic rules still run).
+    const resolved = overrides.ai ?? resolveClassifier({ isDemo: row.isDemo });
+    let aiFacts: AiFacts | null = null;
+    if (resolved.classifier) {
+      const r = await runExceptionAi(db, ctx, connectorId, resolved.classifier);
+      counts.ai_texts = r.stats.texts;
+      if (r.issue) errors.push({ entity: "ai_evidence", message: r.issue });
+      if (r.byProcess.size) aiFacts = { method: r.method, model: r.model, byProcess: r.byProcess };
+    }
+
     // Assess every imported process in this connector.
-    const facts = await buildAllFacts(db, ctx, connectorId, JOB_WINDOW_DAYS);
+    const facts = await buildAllFacts(db, ctx, connectorId, JOB_WINDOW_DAYS, Date.now(), aiFacts);
     for (const f of facts) {
       const r = assess(f);
       const [a] = await db.insert(s.assessments).values({ tenantId: t, processId: f.processId, importRunId: run.id, ruleVersion: r.ruleVersion, recommendation: r.recommendation, confidence: r.confidence, opportunityScore: r.opportunityScore, riskScore: r.riskScore, rationale: r.rationale, riskFlags: r.riskFlags, missingInformation: r.missingInformation, nextStep: r.nextStep, logicAnalysis: r.logicAnalysis, redesignReview: r.redesignReview, runnerUp: r.runnerUp, inputHash: r.inputHash, scores: r.scores }).returning();
-      if (r.findings.length) await db.insert(s.assessmentEvidence).values(r.findings.map((e) => ({ tenantId: t, assessmentId: a.id, ruleId: e.ruleId, signal: e.signal, observed: e.observed, effect: e.effect, weight: Object.values(e.votes).reduce((x, y) => x + (y ?? 0), 0) + (e.risk?.weight ?? 0) / 100, sourceEntity: e.sourceEntity, sourceRefs: e.sourceRefs })));
+      if (r.findings.length) await db.insert(s.assessmentEvidence).values(r.findings.map((e) => ({ tenantId: t, assessmentId: a.id, ruleId: e.ruleId, signal: e.signal, observed: e.observed, effect: e.effect, weight: Object.values(e.votes).reduce((x, y) => x + (y ?? 0), 0) + (e.risk?.weight ?? 0) / 100, sourceEntity: e.sourceEntity, sourceRefs: e.sourceRefs, provenance: e.provenance ?? "deterministic", detail: e.detail ?? null })));
       await audit(db, ctx, "assessment.created", "assessment", a.id, { processId: f.processId, recommendation: r.recommendation, confidence: r.confidence, ruleVersion: r.ruleVersion, inputHash: r.inputHash });
       counts.assessments++;
     }

@@ -8,6 +8,13 @@
       "when": 1793210205882,
       "tag": "0000_black_the_enforcers",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793218109763,
+      "tag": "0001_sour_iron_monger",
+      "breakpoints": true
     }
   ]
 }

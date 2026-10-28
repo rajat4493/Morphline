@@ -3,7 +3,7 @@ import { RECOMMENDATION_LABEL } from "@/assessment/types";
 
 export type PlanInput = {
   assessmentId: string; ruleVersion: string; recommendation: Recommendation; runnerUp: string | null; confidence: number; redesignReview: boolean;
-  riskFlags: string[]; missingInformation: string[]; evidence: { ruleId: string; signal: string; observed: string; effect: string; sourceRefs: string[] }[];
+  riskFlags: string[]; missingInformation: string[]; evidence: { ruleId: string; signal: string; observed: string; effect: string; sourceRefs: string[]; provenance?: string }[];
 };
 export type PlanContent = {
   schema: 1; processName: string; folderPath: string; generatedAt: string; assessmentId: string; ruleVersion: string; recommendation: Recommendation; recommendationLabel: string; confidence: number;
@@ -11,7 +11,7 @@ export type PlanContent = {
   retainedRpaElements: string[]; candidateIntegrations: { name: string; kind: string; basis: string }[];
   policies: string[]; identityAndRbac: string[]; approvalPoints: string[]; validationCriteria: string[];
   backlog: { phase: string; goal: string; items: string[] }[]; assumptions: string[]; unknowns: string[];
-  evidence: { signal: string; observed: string; ruleId: string; refs: string[] }[]; riskFlags: string[]; logicAnalysis: "unavailable";
+  evidence: { signal: string; observed: string; ruleId: string; refs: string[]; provenance?: string }[]; riskFlags: string[]; logicAnalysis: "unavailable";
 };
 
 const PATTERN: Record<Recommendation, { name: string; description: string }> = {
@@ -26,7 +26,7 @@ export function generatePlan(facts: ProcessFacts, a: PlanInput, now = new Date()
   const rec = a.recommendation;
   const queue = facts.queue, trig = facts.triggers;
   const tools = facts.stableSiblingTools;
-  const ev = a.evidence.map((e) => ({ signal: e.signal, observed: e.observed, ruleId: e.ruleId, refs: e.sourceRefs }));
+  const ev = a.evidence.map((e) => ({ signal: e.signal, observed: e.observed, ruleId: e.ruleId, refs: e.sourceRefs, provenance: e.provenance }));
   const uiVolatile = a.riskFlags.some((f) => f.startsWith("VOLATILE_UI"));
 
   const retained: string[] = [];

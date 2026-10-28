@@ -32,7 +32,7 @@ export default async function ProcessPage({ params }: { params: { id: string } }
         </>}
       />
       {!a ? <EmptyState icon={<ListChecks size={22} />} title="No assessment yet">Run an import from Connectors &amp; imports to assess this process.</EmptyState> : <>
-        <DecisionPanel rec={a.recommendation} confidence={a.confidence} opportunity={a.opportunityScore} risk={a.riskScore} evidenceCount={d.evidence.length} conclusion={conclusion} runnerUp={a.runnerUp} redesign={a.redesignReview} />
+        <DecisionPanel rec={a.recommendation} confidence={a.confidence} opportunity={a.opportunityScore} risk={a.riskScore} evidenceCount={d.evidence.length} conclusion={conclusion} runnerUp={a.runnerUp} redesign={a.redesignReview} aiInferred={d.evidence.some((e) => e.provenance === "ai_inferred")} />
         <Tabs tabs={[
           { id: "assessment", label: "Assessment", icon: <ShieldCheck size={16} aria-hidden />, panel: <AssessmentTab d={d} /> },
           { id: "evidence", label: "Evidence", count: d.evidence.length, icon: <FileText size={16} aria-hidden />, panel: <EvidenceTab d={d} /> },

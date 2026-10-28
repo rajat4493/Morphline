@@ -20,6 +20,7 @@ export const SOURCE_LABEL: Record<string, string> = {
 /** Strength is derived from the stored finding weight (votes + risk/100); the baseline prior is labelled as such. */
 export function strengthOf(ev: { ruleId: string; weight: number }): { label: string; level: 0 | 1 | 2 | 3 } {
   if (ev.ruleId === "R03-baseline") return { label: "Baseline", level: 0 };
+  if (ev.ruleId === "R15-ai-exception-mix" && ev.weight === 0) return { label: "Context", level: 0 };
   if (ev.weight < 1) return { label: "Risk signal", level: 1 };
   if (ev.weight >= 3) return { label: "Strong", level: 3 };
   return { label: "Moderate", level: 2 };

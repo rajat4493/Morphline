@@ -21,7 +21,7 @@ export function planToMarkdown(p: PlanContent, narrative?: string | null): strin
     `## Assumptions\n${list(p.assumptions)}`,
     `## Unknowns / information gaps\n${list(p.unknowns)}`,
     `## Risk flags\n${list(p.riskFlags)}`,
-    `## Evidence (assessment ${p.assessmentId}, ${p.ruleVersion})\n${list(p.evidence.map((e) => `**${e.signal}** [${e.ruleId}]: ${e.observed}`))}`,
+    `## Evidence (assessment ${p.assessmentId}, ${p.ruleVersion})\n${list(p.evidence.map((e) => `**${e.signal}** [${e.ruleId}]${e.provenance === "ai_inferred" ? " (AI-inferred, lower trust)" : ""}: ${e.observed}`))}`,
   ].filter(Boolean).join("\n\n") + "\n";
 }
 
@@ -39,6 +39,6 @@ ${sec("Target pattern", `<p><strong>${esc(p.targetPattern.name)}.</strong> ${esc
 ${sec("Retained RPA elements", ul(p.retainedRpaElements))}${sec("Candidate integrations / tools", ul(p.candidateIntegrations.map((i) => `${i.name} (${i.kind}): ${i.basis}`)))}
 ${sec("Policies and guardrails", ul(p.policies))}${sec("Identity and RBAC", ul(p.identityAndRbac))}${sec("Human approval and escalation", ul(p.approvalPoints))}${sec("Test and validation criteria", ul(p.validationCriteria))}
 ${sec("Implementation backlog", p.backlog.map((b) => `<h3>${esc(b.phase)}: ${esc(b.goal)}</h3>${ul(b.items)}`).join(""))}
-${sec("Assumptions", ul(p.assumptions))}${sec("Unknowns / information gaps", ul(p.unknowns))}${sec("Risk flags", ul(p.riskFlags))}${sec(`Evidence (assessment ${p.assessmentId})`, ul(p.evidence.map((e) => `${e.signal} [${e.ruleId}]: ${e.observed}`)))}
+${sec("Assumptions", ul(p.assumptions))}${sec("Unknowns / information gaps", ul(p.unknowns))}${sec("Risk flags", ul(p.riskFlags))}${sec(`Evidence (assessment ${p.assessmentId})`, ul(p.evidence.map((e) => `${e.signal} [${e.ruleId}]${e.provenance === "ai_inferred" ? " (AI-inferred, lower trust)" : ""}: ${e.observed}`)))}
 </body></html>`;
 }

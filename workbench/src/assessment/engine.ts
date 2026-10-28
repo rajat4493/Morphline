@@ -38,23 +38,38 @@ export function assess(facts: ProcessFacts): AssessmentResult {
   if (!facts.queue && !facts.triggers.length) missing.push("No trigger found: how the process is started (manual, external API) is unknown.");
   if (recommendation === "hybrid" || recommendation === "governed_agentic") missing.push("Downstream tool/bot contracts (inputs, outputs, side effects) are unknown.");
 
-  const maxScore = Math.max(...Object.values(scores));
-  const second = scores[runnerUpCandidate];
-  const margin = maxScore > 0 ? (maxScore - second) / maxScore : 0;
-  const strongEvidence = findings.filter((f) => Object.keys(f.votes).length > 0 && f.ruleId !== "R03-baseline").length;
+  /** Confidence from a score table + finding set. Used twice: with everything, and with deterministic findings only. */
+  const confidenceOf = (sc: Record<Recommendation, number>, fs: Finding[]) => {
+    const rank = [...RECOMMENDATIONS].sort((a, b) => sc[b] - sc[a] || RECOMMENDATIONS.indexOf(a) - RECOMMENDATIONS.indexOf(b));
+    const top = sc[rank[0]], second = sc[rank[1]];
+    const margin = top > 0 ? (top - second) / top : 0;
+    const strong = fs.filter((f) => Object.keys(f.votes).length > 0 && f.ruleId !== "R03-baseline").length;
+    const raw = Math.round(Math.max(10, Math.min(CONFIDENCE_CAP, 20 + 35 * margin + 25 * dataDomains + Math.min(15, strong * 5) - Math.min(15, riskFlags.length * 3) - (facts.jobs.total < 30 ? 10 : 0))));
+    return strong === 0 ? Math.min(raw, 40) : raw; // only the weak default prior fired: placeholder, not a finding
+  };
   const dataDomains = [facts.jobs.total > 0, !!facts.queue || !facts.triggers.some((t) => t.kind === "queue"), facts.triggers.length > 0, facts.versionCount > 0].filter(Boolean).length / 4;
-  const rawConfidence = Math.round(Math.max(10, Math.min(CONFIDENCE_CAP, 20 + 35 * margin + 25 * dataDomains + Math.min(15, strongEvidence * 5) - Math.min(15, riskFlags.length * 3) - (facts.jobs.total < 30 ? 10 : 0))));
-  // Only the weak default prior fired: this is a placeholder recommendation, not a finding.
-  const confidence = strongEvidence === 0 ? Math.min(rawConfidence, 40) : rawConfidence;
+  const detFindings = findings.filter((f) => f.provenance !== "ai_inferred");
+  const detScores = Object.fromEntries(RECOMMENDATIONS.map((r) => [r, 0])) as Record<Recommendation, number>;
+  for (const f of detFindings) for (const [rec, w] of Object.entries(f.votes)) detScores[rec as Recommendation] += w ?? 0;
+  // AI-inferred evidence may influence the ranking, but can never raise confidence above what deterministic evidence alone supports.
+  const confidence = Math.min(confidenceOf(scores, findings), confidenceOf(detScores, detFindings));
 
-  const supportPoints = Math.max(scores.ai_augmented, scores.hybrid, scores.governed_agentic);
+  // Opportunity is an ordering aid for priority lists: it uses deterministic evidence only, so model labels cannot move it.
+  const supportPoints = Math.max(detScores.ai_augmented, detScores.hybrid, detScores.governed_agentic);
   const volume = facts.jobs.perDay >= 10 ? 25 : facts.jobs.perDay >= 3 ? 15 : facts.jobs.perDay >= 1 ? 8 : 0;
   const opportunityScore = recommendation === "retire" ? 0 : Math.min(100, supportPoints * 9 + volume + (facts.queue ? Math.round(facts.queue.businessExceptionRate * 60) : 0));
 
-  const rationale = findings.filter((f) => Object.keys(f.votes).length > 0 && f.ruleId !== "R03-baseline").map((f) => `${f.signal}: ${f.observed}. ${f.effect}`);
+  const rationale = findings.filter((f) => Object.keys(f.votes).length > 0 && f.ruleId !== "R03-baseline").map((f) => `${f.provenance === "ai_inferred" ? "[AI-inferred] " : ""}${f.signal}: ${f.observed}. ${f.effect}`);
   if (rationale.length === 0) rationale.push("No strong signals in the imported data; defaulted to deterministic (weak prior).");
   if (redesignReview) rationale.push("Risk signals indicate a redesign/risk review should precede any migration; the recommendation above is the direction once the process is stable, not an instruction to add AI.");
 
+  const aiUsed = findings.some((f) => f.provenance === "ai_inferred");
+  if (aiUsed) missing.push("Some evidence is AI-inferred (model-labelled exception texts). It is lower trust: review the labelled texts in Evidence. It can influence ranking but never raises confidence.");
+  if (facts.exceptionAi) {
+    const items = facts.exceptionAi.items, tot = items.reduce((a, i) => a + i.count, 0) || 1;
+    const dis = items.filter((i) => i.label !== "other_unclear" && i.keywordLabel !== "other_unclear" && i.label !== i.keywordLabel);
+    if (dis.reduce((a, i) => a + i.count, 0) / tot >= 0.2) missing.push(`The AI labels disagree with the keyword baseline on ${dis.length} exception text(s) (${Math.round((dis.reduce((a, i) => a + i.count, 0) / tot) * 100)}% of occurrences). Human review of those labels is recommended.`);
+  }
   const inputHash = createHash("sha256").update(JSON.stringify({ rules: RULESET_VERSION, facts })).digest("hex").slice(0, 16);
   return { ruleVersion: RULESET_VERSION, recommendation, runnerUp, confidence, opportunityScore, riskScore, rationale, riskFlags, missingInformation: missing, nextStep: redesignReview ? `Run a redesign/risk review first (root-cause the failures). Then: ${NEXT_STEP[recommendation]}` : NEXT_STEP[recommendation], redesignReview, logicAnalysis: "unavailable", scores, findings, inputHash };
 }

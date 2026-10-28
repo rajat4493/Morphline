@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { ActionButton } from "@/components/Actions";
 import { CoverageNotice, EmptyState, EvidenceItem, Metric, RevealName, RiskPanel, StatusBadge } from "@/components/ds";
 import { SOURCE_LABEL, strengthOf } from "@/components/ds/meta";
+import { CATEGORY_INFO, type ExceptionCategory } from "@/ai/taxonomy";
+import { redact } from "@/ai/redact";
 import { day, dt } from "@/lib/fmt";
 import type { PlanContent } from "@/plan/generate";
 import type { processDetail } from "@/services/queries";
@@ -30,7 +32,7 @@ export function AssessmentTab({ d }: { d: Detail }) {
             drivers.map((e) => { const s = strengthOf(e); return (
               <article className="insight" key={e.id}>
                 <span className="insight-ico">{SRC_ICON[e.sourceEntity] ?? <CircleDot size={18} aria-hidden />}</span>
-                <div><h4>{e.signal}<StatusBadge tone="blue">{s.label}</StatusBadge></h4><p>{e.observed}.</p><p style={{ color: "var(--text-3)" }}>{e.effect}</p><span className="src">Source: {SOURCE_LABEL[e.sourceEntity] ?? e.sourceEntity} · {e.ruleId}</span></div>
+                <div><h4>{e.signal}<StatusBadge tone="blue">{s.label}</StatusBadge>{e.provenance === "ai_inferred" && <StatusBadge tone="amber">AI-inferred</StatusBadge>}</h4><p>{e.observed}.</p><p style={{ color: "var(--text-3)" }}>{e.effect}</p><span className="src">Source: {SOURCE_LABEL[e.sourceEntity] ?? e.sourceEntity} · {e.ruleId}</span></div>
               </article>); })}
           {a.redesignReview && <article className="insight"><span className="insight-ico" style={{ background: "var(--amber-soft)", color: "var(--amber)" }}><AlertTriangle size={18} aria-hidden /></span><div><h4>Stabilise before migrating</h4><p>Risk signals indicate a redesign or risk review should come first. The recommendation shows the direction once the process is stable; it is not an instruction to add AI.</p></div></article>}
           <section className="panel panel-pad" aria-labelledby="next-h"><h3 className="panel-title" id="next-h"><Search size={16} aria-hidden />Suggested next discovery step</h3><p style={{ margin: 0 }}>{a.nextStep}</p></section>
@@ -64,7 +66,7 @@ export function EvidenceTab({ d }: { d: Detail }) {
   const sorted = [...d.evidence].sort((x, y) => y.weight - x.weight);
   return (
     <div>
-      <p className="muted" style={{ marginTop: 0 }}>Each row is a rule finding computed from imported data. Open a row for the exact observed values and references.</p>
+      <p className="muted" style={{ marginTop: 0 }}>Each row is a rule finding. Rows marked AI-inferred depend on model-labelled exception text and carry lower trust. Open a row for the exact observed values, references and source texts.</p>
       {sorted.length === 0 ? <EmptyState icon={<ListChecks size={22} />} title="No evidence recorded">Run an import to produce an assessment.</EmptyState> : sorted.map((e) => <EvidenceItem key={e.id} ev={e} />)}
     </div>
   );
@@ -99,6 +101,7 @@ export function OperationsTab({ d }: { d: Detail }) {
   const failed = d.trend.reduce((x, w) => x + w.failed, 0);
   const rate = d.jobCount ? failed / d.jobCount : 0;
   const q = d.queues.find((x) => x.sig)?.sig;
+  const aiLabels = new Map<string, string>(((d.evidence.find((e) => e.ruleId === "R15-ai-exception-mix")?.detail as { text: string; label: string }[] | undefined) ?? []).map((i) => [i.text, i.label]));
   return (
     <div className="stack-l">
       <section className="panel panel-pad" aria-label="Operational key figures"><div className="metrics">
@@ -118,7 +121,7 @@ export function OperationsTab({ d }: { d: Detail }) {
           {d.queues.length === 0 ? <p className="muted" style={{ margin: 0 }}>No queue is linked to this process.</p> : d.queues.map(({ q: qu, sig }) => (
             <div key={qu.id}><p style={{ marginTop: 0 }}><b>{qu.name}</b></p>{!sig ? <p className="muted">Queue-item signals unavailable (check permissions).</p> : <>
               <dl><div><dt>Items</dt><dd>{sig.total}</dd></div><div><dt>Successful</dt><dd>{sig.successful}</dd></div><div><dt>Business exceptions</dt><dd>{sig.businessExceptions}</dd></div><div><dt>Application exceptions</dt><dd>{sig.applicationExceptions}</dd></div><div><dt>Abandoned</dt><dd>{sig.abandoned}</dd></div><div><dt>Retried</dt><dd>{sig.retried}</dd></div></dl>
-              {sig.topErrorReasons.length > 0 && <><h3 style={{ fontSize: 13.5, margin: "16px 0 8px" }}>Top exception reasons</h3><div className="bars">{sig.topErrorReasons.map((r) => <div className="bar-row" key={r.reason}><div>{r.reason}<div className="bar-track"><div className="bar-fill" style={{ width: `${(r.count / sig.topErrorReasons[0].count) * 100}%` }} /></div></div><b className="num">{r.count}</b></div>)}</div></>}</>}</div>))}</section>
+              {sig.topErrorReasons.length > 0 && <><h3 style={{ fontSize: 13.5, margin: "16px 0 8px" }}>Top exception reasons</h3><div className="bars">{sig.topErrorReasons.map((r) => <div className="bar-row" key={r.reason}><div>{r.reason}{aiLabels.has(redact(r.reason)) && <> <StatusBadge tone="amber">AI: {CATEGORY_INFO[aiLabels.get(redact(r.reason)) as ExceptionCategory]?.label ?? aiLabels.get(redact(r.reason))}</StatusBadge></>}<div className="bar-track"><div className="bar-fill" style={{ width: `${(r.count / sig.topErrorReasons[0].count) * 100}%` }} /></div></div><b className="num">{r.count}</b></div>)}</div></>}</>}</div>))}</section>
       </div>
     </div>
   );

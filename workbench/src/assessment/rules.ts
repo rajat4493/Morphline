@@ -1,12 +1,25 @@
-import type { Finding, ProcessFacts } from "./types";
+import { CATEGORY_INFO, type ExceptionCategory } from "@/ai/taxonomy";
+import type { ExceptionAiItem, Finding, ProcessFacts } from "./types";
 
-export const RULESET_VERSION = "rules-2026.10.1";
+export const RULESET_VERSION = "rules-2026.11.0";
 
 const DOC = /(layout|ocr|extract|pdf|scan|attachment|unstructured|intent|classif|invoice|document|email)/i;
 const REASON_DOC = /(layout|ocr|unstructured|attachment|intent|language|confidence|not recogni[sz]ed)/i;
 const REASON_ROUTING = /(category|rout|triage|unclear|multiple|ambiguous|judg)/i;
 const UI_FAULT = /(selector|element not found|ui timeout|screen|ui element)/i;
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+
+const MIN_AI_CONFIDENCE = 60;
+/** Minimum sample before AI labels may vote: a single odd message must not move a recommendation. */
+export const MIN_AI_TEXTS = 2, MIN_AI_OCCURRENCES = 20;
+/** Share of AI-labelled exception occurrences per category, counting only labels the model was reasonably sure about. */
+export function aiMix(items: ExceptionAiItem[]) {
+  const total = items.reduce((a, i) => a + i.count, 0);
+  const by = new Map<string, number>();
+  for (const i of items) if (i.confidence >= MIN_AI_CONFIDENCE && i.label !== "other_unclear") by.set(i.label, (by.get(i.label) ?? 0) + i.count);
+  const share = (c: ExceptionCategory) => (total ? (by.get(c) ?? 0) / total : 0);
+  return { total, by, share, labelled: [...by.values()].reduce((a, b) => a + b, 0) };
+}
 
 export type Rule = { id: string; description: string; evaluate: (f: ProcessFacts) => Finding | null };
 
@@ -106,5 +119,31 @@ export const RULES: Rule[] = [
     evaluate: (f) => f.folderAssets.credentialLike > 0
       ? { ruleId: "R14-privileged-credentials", signal: "Credential assets in folder scope", observed: `${f.folderAssets.credentialLike} credential/secret-type asset(s) exist in ${f.folderPath} (metadata only; usage by this process cannot be determined from the API)`, effect: "Risk: any agentic design needs scoped identities and no shared credentials.", votes: {}, risk: { code: "CREDENTIALS_IN_SCOPE", text: "Credential-type assets in folder scope", weight: 10 }, sourceEntity: "asset_metadata", sourceRefs: ["assets:folder"] }
       : null,
+  },
+  {
+    id: "R15-ai-exception-mix", description: "AI-labelled exception texts: lower-trust evidence about what kind of exceptions occur (document, ambiguity, data...)",
+    evaluate: (f) => {
+      const ai = f.exceptionAi; if (!ai || ai.items.length === 0) return null;
+      const m = aiMix(ai.items);
+      const parts = [...m.by].sort((a, b) => b[1] - a[1]).map(([c, n]) => `${Math.round((n / m.total) * 100)}% ${CATEGORY_INFO[c as ExceptionCategory].label.toLowerCase()}`);
+      const votes: Finding["votes"] = {};
+      const enough = ai.items.length >= MIN_AI_TEXTS && m.total >= MIN_AI_OCCURRENCES;
+      if (enough && m.share("document_input") >= 0.3) votes.ai_augmented = 2;
+      if (enough && m.share("classification_ambiguity") >= 0.3) votes.hybrid = 2;
+      return { ruleId: "R15-ai-exception-mix", signal: "AI-labelled exception mix", observed: `${ai.items.length} distinct exception texts (${m.total} occurrences) labelled by ${ai.model}: ${parts.join(", ") || "none labelled with enough confidence"}`,
+        effect: `AI-inferred, lower trust. ${votes.ai_augmented ? "Many exceptions are document/input problems, which supports AI-augmented. " : ""}${votes.hybrid ? "Many exceptions are classification/routing ambiguity, which supports hybrid. " : ""}${Object.keys(votes).length ? "Votes are deliberately smaller than the rule-based equivalents." : (enough ? "No vote: no category passed the 30% threshold." : `No vote: sample too small (needs at least ${MIN_AI_TEXTS} distinct texts and ${MIN_AI_OCCURRENCES} occurrences).`)}`,
+        votes, sourceEntity: "queue_signals", sourceRefs: [...new Set(ai.items.map((i) => `${i.source}:${i.text.slice(0, 40)}`))].slice(0, 8), provenance: "ai_inferred", detail: ai.items };
+    },
+  },
+  {
+    id: "R16-ai-exception-risk", description: "AI-labelled exceptions that point to data or UI problems rather than missing intelligence",
+    evaluate: (f) => {
+      const ai = f.exceptionAi; if (!ai || ai.items.length === 0) return null;
+      const m = aiMix(ai.items);
+      if (m.total < MIN_AI_OCCURRENCES) return null;
+      if (m.share("reference_data_missing") >= 0.3) return { ruleId: "R16-ai-exception-risk", signal: "Reference-data exceptions", observed: `${Math.round(m.share("reference_data_missing") * 100)}% of labelled exception occurrences are missing reference data (lookup/master data)`, effect: "Risk: these failures are data-quality problems; adding AI will not fix them. Fix master data first.", votes: {}, risk: { code: "DATA_QUALITY_EXCEPTIONS", text: "Exceptions dominated by missing reference data (AI-inferred)", weight: 5 }, sourceEntity: "queue_signals", sourceRefs: ["ai_evidence"], provenance: "ai_inferred", detail: ai.items };
+      if (m.share("ui_fragility") >= 0.5) return { ruleId: "R16-ai-exception-risk", signal: "UI-fragility exceptions", observed: `${Math.round(m.share("ui_fragility") * 100)}% of labelled exception occurrences are UI selector/element failures`, effect: "Risk: corroborates volatile UI automation. Does not raise the redesign flag on its own.", votes: {}, risk: { code: "UI_EXCEPTIONS_AI", text: "Exceptions dominated by UI failures (AI-inferred)", weight: 5 }, sourceEntity: "execution_jobs", sourceRefs: ["ai_evidence"], provenance: "ai_inferred", detail: ai.items };
+      return null;
+    },
   },
 ];

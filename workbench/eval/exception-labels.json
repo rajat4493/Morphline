@@ -1,0 +1,189 @@
+{
+ "note": "Labels authored by the product team against the taxonomy in src/ai/taxonomy.ts; unreviewed by external experts. Tricky cases are intentional (e.g. 'Supplier not found - needs manual review' is reference data, not routing; 'Portal login page layout changed' is UI fragility, not document input).",
+ "items": [
+  {
+   "text": "Invoice layout not recognised",
+   "label": "document_input"
+  },
+  {
+   "text": "OCR confidence below threshold 0.62",
+   "label": "document_input"
+  },
+  {
+   "text": "Could not extract total amount from PDF",
+   "label": "document_input"
+  },
+  {
+   "text": "Attachment is password protected",
+   "label": "document_input"
+  },
+  {
+   "text": "Scanned image too blurry to read",
+   "label": "document_input"
+  },
+  {
+   "text": "Mixed-language email body",
+   "label": "document_input"
+  },
+  {
+   "text": "Unstructured free-text request",
+   "label": "document_input"
+  },
+  {
+   "text": "Category unclear",
+   "label": "classification_ambiguity"
+  },
+  {
+   "text": "Multiple categories detected",
+   "label": "classification_ambiguity"
+  },
+  {
+   "text": "Needs manual routing",
+   "label": "classification_ambiguity"
+  },
+  {
+   "text": "Ticket could not be assigned to a queue",
+   "label": "classification_ambiguity"
+  },
+  {
+   "text": "Intent not matched",
+   "label": "classification_ambiguity"
+  },
+  {
+   "text": "Customer request matches both refund and complaint",
+   "label": "classification_ambiguity"
+  },
+  {
+   "text": "Unable to decide priority from description",
+   "label": "classification_ambiguity"
+  },
+  {
+   "text": "Supplier not found - needs manual review",
+   "label": "reference_data_missing"
+  },
+  {
+   "text": "No matching customer record for account",
+   "label": "reference_data_missing"
+  },
+  {
+   "text": "Cost centre does not exist",
+   "label": "reference_data_missing"
+  },
+  {
+   "text": "Employee ID not found in HR master",
+   "label": "reference_data_missing"
+  },
+  {
+   "text": "Vendor missing from approved list",
+   "label": "reference_data_missing"
+  },
+  {
+   "text": "Invoice total does not match PO amount",
+   "label": "validation_rule"
+  },
+  {
+   "text": "Invalid email format",
+   "label": "validation_rule"
+  },
+  {
+   "text": "Date out of range",
+   "label": "validation_rule"
+  },
+  {
+   "text": "Required field 'IBAN' is empty",
+   "label": "validation_rule"
+  },
+  {
+   "text": "Amount exceeds 10,000 limit",
+   "label": "validation_rule"
+  },
+  {
+   "text": "Manager approval missing",
+   "label": "approval_required"
+  },
+  {
+   "text": "Awaiting authorisation from finance",
+   "label": "approval_required"
+  },
+  {
+   "text": "Payment above threshold requires sign-off",
+   "label": "approval_required"
+  },
+  {
+   "text": "Selector not found: <wnd app='tn3270.exe'/>",
+   "label": "ui_fragility"
+  },
+  {
+   "text": "Element not found after 30000ms",
+   "label": "ui_fragility"
+  },
+  {
+   "text": "UI timeout waiting for screen",
+   "label": "ui_fragility"
+  },
+  {
+   "text": "Portal login page layout changed",
+   "label": "ui_fragility"
+  },
+  {
+   "text": "Click failed: button is not visible",
+   "label": "ui_fragility"
+  },
+  {
+   "text": "Target application API returned 500",
+   "label": "system_unavailable"
+  },
+  {
+   "text": "Connection timed out after 60s",
+   "label": "system_unavailable"
+  },
+  {
+   "text": "Database is locked by another session",
+   "label": "system_unavailable"
+  },
+  {
+   "text": "Robot licence unavailable",
+   "label": "system_unavailable"
+  },
+  {
+   "text": "Service temporarily unavailable",
+   "label": "system_unavailable"
+  },
+  {
+   "text": "Login failed for service account",
+   "label": "access_credentials"
+  },
+  {
+   "text": "Access denied to shared folder",
+   "label": "access_credentials"
+  },
+  {
+   "text": "MFA code required",
+   "label": "access_credentials"
+  },
+  {
+   "text": "Credential asset could not be retrieved",
+   "label": "access_credentials"
+  },
+  {
+   "text": "Password expired",
+   "label": "access_credentials"
+  },
+  {
+   "text": "Unexpected error",
+   "label": "other_unclear"
+  },
+  {
+   "text": "Process failed",
+   "label": "other_unclear"
+  },
+  {
+   "text": "Object reference not set to an instance of an object",
+   "label": "other_unclear"
+  },
+  {
+   "text": "Job stopped by user",
+   "label": "other_unclear"
+  }
+ ]
+}

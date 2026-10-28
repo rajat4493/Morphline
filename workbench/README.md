@@ -57,7 +57,16 @@ Each rule reads imported facts and emits a finding with observed values, effect,
 - Tenant isolation: every table has `tenant_id` and services take a `TenantContext`. The demo resolves one tenant; replace `resolveTenant` with a session lookup for multi-tenancy. **There is no user authentication yet.**
 - Exports HTML-escape all content.
 
-### Optional LLM
+### AI evidence layer (exception labelling)
+Optional, **off by default** (`MORPHLINE_AI_EVIDENCE=off|on|demo`). After import, the top exception texts per process (queue-item failure reasons and faulted-job messages) are redacted, de-duplicated and labelled by a model into a fixed taxonomy (`src/ai/taxonomy.ts`: document input, classification ambiguity, reference data missing, validation rule, approval required, UI fragility, system unavailable, access/credentials, other). Labels become rule inputs **R15/R16** and are stored as `ai_inferred` evidence with every source text, label, confidence and the keyword-baseline label.
+
+Guardrails (all tested): the model only sees redacted text and returns labels; output is validated, so unknown labels become `other_unclear`; labels can influence ranking but **never raise confidence or opportunity**, need a minimum sample (2 distinct texts, 20 occurrences) to vote, and are shown as lower-trust in the UI, plan and exports; results are cached by text hash + model + prompt version; a model failure degrades to deterministic rules and is reported in import history; audit records store counts and model id, never texts.
+
+- `on`: needs `ANTHROPIC_API_KEY`; model `MORPHLINE_AI_EVIDENCE_MODEL` (default `claude-haiku-5-5`). **Data egress:** redacted exception texts (emails, numbers, IDs, URLs, paths and token-like strings removed; 200 chars max) leave the server. Redaction is best-effort; confirm it meets your data policy.
+- `demo`: a **scripted simulated model** for the demo connector only, clearly labelled "simulated-demo". It is not a model; it exists to exercise the real request/validation/UI path.
+- **Not yet validated against a real model.** `npm run` equivalent: `npx tsx scripts/eval-exception-classifier.ts` scores classifiers on `eval/exception-labels.json` (46 product-team-labelled texts incl. tricky cases). Keyword baseline today: 74% accuracy (94% when confident). The model result is blocked until a key is available.
+
+### Optional LLM (plan summary)
 If `ANTHROPIC_API_KEY` is set, plan generation asks a model to restate the structured plan as a short summary (`MORPHLINE_LLM_MODEL`, default `claude-sonnet-5-5`). It never classifies, never sees raw telemetry, and its text is stored, shown and exported marked as an **AI-generated draft**. Not exercised against a live API in this repo (the test uses a stub).
 
 ## What is mocked vs live
