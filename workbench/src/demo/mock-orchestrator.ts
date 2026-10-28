@@ -11,6 +11,8 @@ type Proc = { id: number; name: string; pkg: string; folder: number; versions: {
   cron?: { expr: string; enabled: boolean }; queue?: string };
 type Q = { id: number; name: string; folder: number; total: number; success: number; biz: number; app: number; abandoned: number; retried: number; reasons: string[] };
 
+import { buildDemoPackage } from "./package-builder";
+
 const DAY = 86400_000;
 const FOLDERS = [
   { Id: 101, Key: "f-101", DisplayName: "AP", FullyQualifiedName: "Shared/Finance/AP", ParentId: 100 },
@@ -64,7 +66,8 @@ const ASSETS: Record<number, Row[]> = {
 
 function rng(seed: number) { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 2 ** 32); }
 
-export type MockOptions = { token?: string; now?: number; denyPaths?: Record<string, number>; log?: string[] };
+export type MockOptions = { token?: string; now?: number; denyPaths?: Record<string, number>; log?: string[];
+  /** test hook: override DownloadPackage responses by key "packageId:version" (Buffer = body, number = HTTP status) */ packages?: Record<string, Buffer | number> };
 
 export function createMockOrchestrator(opts: MockOptions = {}): typeof fetch {
   const now = opts.now ?? Date.now();
@@ -124,6 +127,18 @@ export function createMockOrchestrator(opts: MockOptions = {}): typeof fetch {
     if (path === "/odata/Releases") return odata(PROCS.filter((p) => inFolder(p.folder)).map((p) => ({ Id: p.id, Key: `rel-${p.id}`, Name: p.name, ProcessKey: p.pkg, ProcessVersion: p.versions.at(-1)!.v, Description: p.desc, ProcessType: p.type, CreationTime: new Date(now - p.versions[0].daysAgo * DAY).toISOString() })), url);
     const pv = path.match(/GetProcessVersions\(processId='([^']+)'\)/);
     if (pv) { const p = PROCS.find((x) => x.pkg === decodeURIComponent(pv[1])); return send(200, { value: (p?.versions ?? []).map((v) => ({ Version: v.v, Published: new Date(now - v.daysAgo * DAY).toISOString() })) }); }
+    const dl = path.match(/DownloadPackage\(key='([^']+)'\)/);
+    if (dl) {
+      const key = decodeURIComponent(dl[1]);
+      const forced = opts.packages?.[key];
+      if (typeof forced === "number") return send(forced, { message: "forced" });
+      if (forced) return new Response(new Uint8Array(forced), { status: 200, headers: { "content-type": "application/octet-stream", "content-length": String(forced.length) } });
+      const [pkg, ver] = [key.slice(0, key.lastIndexOf(":")), key.slice(key.lastIndexOf(":") + 1)];
+      const p = PROCS.find((x) => x.pkg === pkg && x.versions.some((v) => v.v === ver));
+      if (!p || (pkg === "WeeklySalesReport" && ver === "1.0.2")) return send(404, { message: "package not found on feed" }); // demo: the retired duplicate's package was deleted
+      const body = buildDemoPackage(p.name, p.pkg, ver, p.versions.map((v) => v.v));
+      return new Response(new Uint8Array(body), { status: 200, headers: { "content-type": "application/octet-stream", "content-length": String(body.length) } });
+    }
     if (path === "/odata/Jobs") {
       const m = (url.searchParams.get("$filter") ?? "").match(/StartTime ge (\S+)/), since = m ? Date.parse(m[1]) : 0;
       const names = new Set(PROCS.filter((p) => inFolder(p.folder)).map((p) => p.id));

@@ -15,6 +15,13 @@
       "when": 1793218109763,
       "tag": "0001_sour_iron_monger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793221606514,
+      "tag": "0002_workable_multiple_man",
+      "breakpoints": true
     }
   ]
 }

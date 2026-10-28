@@ -13,6 +13,10 @@ export const tenants = pgTable("tenants", { id: id(), name: text("name").notNull
 export const connectors = pgTable("connectors", {
   id: id(), tenantId: tenantId(), kind: text("kind").notNull(), name: text("name").notNull(), isDemo: boolean("is_demo").notNull().default(false),
   encryptedConfig: text("encrypted_config").notNull(), selectedFolderIds: jsonb("selected_folder_ids").$type<string[]>().notNull().default([]),
+  /** Package analysis is opt-in. Both flags must be true before any package is downloaded. */
+  packageAnalysisEnabled: boolean("package_analysis_enabled").notNull().default(false), packagePermissionConfirmed: boolean("package_permission_confirmed").notNull().default(false),
+  /** Retain the raw .nupkg encrypted at rest. Off by default and independent of analysis. */
+  packageRetainRaw: boolean("package_retain_raw").notNull().default(false),
   lastTestAt: timestamp("last_test_at", { withTimezone: true }), lastTestOk: boolean("last_test_ok"), lastTestMessage: text("last_test_message"),
   createdAt: createdAt(),
 });
@@ -84,6 +88,8 @@ export const assetMetadata = pgTable("asset_metadata", {
 export const dependencies = pgTable("dependencies", {
   id: id(), tenantId: tenantId(), processId: uuid("process_id").notNull().references(() => automationProcesses.id, { onDelete: "cascade" }),
   kind: text("kind").notNull(), name: text("name").notNull(), detail: text("detail"), origin: text("origin").notNull(),
+  /** confirmed_package | confirmed_orchestrator | folder_scoped | inferred */
+  basis: text("basis").notNull().default("confirmed_orchestrator"),
 });
 
 export const assessments = pgTable("assessments", {
@@ -91,7 +97,7 @@ export const assessments = pgTable("assessments", {
   ruleVersion: text("rule_version").notNull(), recommendation: text("recommendation").notNull(), confidence: integer("confidence").notNull(), opportunityScore: integer("opportunity_score").notNull(),
   riskScore: integer("risk_score").notNull(), rationale: jsonb("rationale").$type<string[]>().notNull(), riskFlags: jsonb("risk_flags").$type<string[]>().notNull(),
   missingInformation: jsonb("missing_information").$type<string[]>().notNull(), nextStep: text("next_step").notNull(), logicAnalysis: text("logic_analysis").notNull().default("unavailable"), redesignReview: boolean("redesign_review").notNull().default(false), runnerUp: text("runner_up"),
-  inputHash: text("input_hash").notNull(), scores: jsonb("scores").$type<Record<string, number>>().notNull(), createdAt: createdAt(),
+  inputHash: text("input_hash").notNull(), eligibility: jsonb("eligibility").$type<Record<string, { eligible: boolean; reasons: string[] }>>().notNull().default({}), packageAnalysisId: uuid("package_analysis_id"), scores: jsonb("scores").$type<Record<string, number>>().notNull(), createdAt: createdAt(),
 }, (t) => [index("assess_proc").on(t.processId, t.createdAt)]);
 
 export const assessmentEvidence = pgTable("assessment_evidence", {
@@ -118,3 +124,27 @@ export const auditEvents = pgTable("audit_events", {
   id: id(), tenantId: tenantId(), actor: text("actor").notNull(), action: text("action").notNull(), entityType: text("entity_type").notNull(), entityId: text("entity_id"),
   detail: jsonb("detail").$type<Record<string, unknown>>().notNull().default({}), at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+
+/** Derived structural facts of one exact package version. Raw selectors, literals and package bytes are never stored here. */
+export const packageAnalyses = pgTable("package_analyses", {
+  id: id(), tenantId: tenantId(), processId: uuid("process_id").notNull().references(() => automationProcesses.id, { onDelete: "cascade" }),
+  version: text("version").notNull(), analyzerVersion: text("analyzer_version").notNull(), isDeployed: boolean("is_deployed").notNull().default(true),
+  /** source_available | compiled_only | unreadable | missing */
+  sourceStatus: text("source_status").notNull(), coverage: doublePrecision("coverage").notNull().default(0), xamlTotal: integer("xaml_total").notNull().default(0), xamlParsed: integer("xaml_parsed").notNull().default(0),
+  packageSha256: text("package_sha256"), packageBytes: integer("package_bytes"), identityMatches: boolean("identity_matches"),
+  /** download_denied | not_found | too_large | download_error | analyzer_failed | isolation_unavailable, when no analysis could be produced */
+  failure: text("failure"), failureDetail: text("failure_detail"),
+  graph: jsonb("graph").$type<unknown>(), isolation: jsonb("isolation").$type<unknown>(), createdAt: createdAt(),
+}, (t) => [uniqueIndex("pkg_an_key").on(t.processId, t.version, t.analyzerVersion)]);
+
+/** Encrypted raw package (AES-256-GCM). Only written when the connector's retain-raw setting is on. */
+export const packageBlobs = pgTable("package_blobs", {
+  id: id(), tenantId: tenantId(), analysisId: uuid("analysis_id").notNull().references(() => packageAnalyses.id, { onDelete: "cascade" }), encrypted: text("encrypted").notNull(), sizeBytes: integer("size_bytes").notNull(), createdAt: createdAt(),
+}, (t) => [uniqueIndex("pkg_blob_an").on(t.analysisId)]);
+
+export const packageDiffs = pgTable("package_diffs", {
+  id: id(), tenantId: tenantId(), processId: uuid("process_id").notNull().references(() => automationProcesses.id, { onDelete: "cascade" }),
+  fromAnalysisId: uuid("from_analysis_id").notNull().references(() => packageAnalyses.id, { onDelete: "cascade" }), toAnalysisId: uuid("to_analysis_id").notNull().references(() => packageAnalyses.id, { onDelete: "cascade" }),
+  fromVersion: text("from_version").notNull(), toVersion: text("to_version").notNull(), summary: jsonb("summary").$type<unknown>().notNull(), createdAt: createdAt(),
+}, (t) => [uniqueIndex("pkg_diff_key").on(t.fromAnalysisId, t.toAnalysisId)]);

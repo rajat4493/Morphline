@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { assess, CONFIDENCE_CAP } from "@/assessment/engine";
-import type { ProcessFacts } from "@/assessment/types";
+import type { PackageFacts, ProcessFacts } from "@/assessment/types";
 
 const base = (o: Partial<ProcessFacts> = {}): ProcessFacts => ({
   processId: "p", name: "Generic_Process", packageId: "GenericProcess", description: "", version: "1.0.0", folderPath: "Shared/X",
   versionCount: 2, versionsLast180d: 0, daysSinceLastPublish: 300,
   jobs: { windowDays: 90, total: 90, successful: 89, faulted: 1, failureRate: 0.011, perDay: 1, daysSinceLastRun: 0, avgDurationSec: 100, escalated: 0, topErrors: [], uiFaults: 0 },
   triggers: [{ kind: "time", cron: "0 6 * * *", enabled: true }], queue: null, folderAssets: { total: 0, credentialLike: 0 }, duplicatesOf: [], stableSiblingTools: [], ...o,
+});
+export const pkgFacts = (o: Partial<PackageFacts> = {}): PackageFacts => ({
+  analysisId: "a1", deployedVersion: "1.0.0", analyzedVersion: "1.0.0", versionMatches: true, status: "source_available", failure: null, failureDetail: null, coverage: 1, identityMatches: true, workflows: 4, activities: 60,
+  ui: { actions: 0, imageBased: 0, selectors: 0, fragile: 0, idx: 0 }, integrations: { api: 0, database: 0, file: 0, email: 0, queue: 0, document: 0, code: 0 },
+  control: { branches: 5, loops: 2, retries: 1, tryCatch: 2, catches: 2, continueOnError: 0, businessRuleExceptions: 0, cyclomatic: 8 }, hardcoded: { secrets: 0, connectionStrings: 0, paths: 0, emails: 0 }, embedded: { scripts: 0, executables: 0 }, diff: null, ...o,
 });
 const queue = (o: Partial<NonNullable<ProcessFacts["queue"]>>) => ({ name: "Q", total: 500, successRate: 0.7, businessExceptionRate: 0.2, applicationExceptionRate: 0.04, abandonedRate: 0.02, retriedRate: 0.1, topReasons: [], ...o });
 
@@ -28,8 +33,14 @@ describe("recommendation rules", () => {
       stableSiblingTools: [{ name: "A", failureRate: 0.02, jobs: 500 }, { name: "B", failureRate: 0.05, jobs: 400 }] });
     const r = assess(f);
     expect(r.recommendation).toBe("hybrid");
-    expect(r.runnerUp).toBe("governed_agentic");
-    expect(assess({ ...f, stableSiblingTools: [] }).runnerUp).not.toBe("governed_agentic");
+    // no package analysis: governed agentic has evidence but is NOT eligible, so it cannot be runner-up
+    expect(r.runnerUp).not.toBe("governed_agentic");
+    expect(r.eligibility.governed_agentic.eligible).toBe(false);
+    expect(r.eligibility.governed_agentic.reasons[0]).toMatch(/has not been run/);
+    expect(r.gated.map((g) => g.option)).toContain("governed_agentic");
+    // with a trusted package analysis it becomes eligible again and is the runner-up, but only with stable tools
+    expect(assess({ ...f, package: pkgFacts() }).runnerUp).toBe("governed_agentic");
+    expect(assess({ ...f, stableSiblingTools: [], package: pkgFacts() }).runnerUp).not.toBe("governed_agentic");
   });
   it("high failure with UI faults -> redesign review, never agentic", () => {
     const r = assess(base({ name: "Legacy_Mainframe", versionsLast180d: 9, jobs: { ...base().jobs, total: 700, faulted: 266, successful: 434, failureRate: 0.38, uiFaults: 250, topErrors: [{ text: "Selector not found", count: 200 }] } }));

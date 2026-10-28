@@ -39,7 +39,7 @@ describe("demo import through the real connector", () => {
     expect(by.Invoice_Portal_Download.rec).toBe("deterministic");
     expect(by.Invoice_Data_Extraction.rec).toBe("ai_augmented");
     expect(by.ServiceDesk_Ticket_Triage.rec).toBe("hybrid");
-    expect(by.ServiceDesk_Ticket_Triage.runnerUp).toBe("governed_agentic");
+    expect(by.ServiceDesk_Ticket_Triage.runnerUp).toBe("deterministic"); // governed agentic is gated: no package analysis was run
     expect(by.Claims_Legacy_Mainframe_Update.redesign).toBe(true);
     expect(by.Weekly_Sales_Report_Copy.rec).toBe("retire");
     expect(by.Weekly_Sales_Report.rec).toBe("deterministic");

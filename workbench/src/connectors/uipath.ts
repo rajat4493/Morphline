@@ -1,4 +1,4 @@
-import type { ConnectorConfig, EstateConnector, EstateIssue, FolderSnapshot, SourceAsset, SourceFolder, SourceJob, SourceMachine, SourceProcess, SourceQueue, SourceTrigger, TestResult } from "./types";
+import type { ConnectorConfig, EstateConnector, PackageDownload, EstateIssue, FolderSnapshot, SourceAsset, SourceFolder, SourceJob, SourceMachine, SourceProcess, SourceQueue, SourceTrigger, TestResult } from "./types";
 
 type Fetch = typeof fetch;
 type Odata<T> = { value: T[]; "@odata.count"?: number };
@@ -64,6 +64,32 @@ export class UiPathConnector implements EstateConnector {
     }
     this.truncations.push(`${path} truncated at ${MAX_PAGES * PAGE} rows; results are incomplete (narrow the window or folder selection)`);
     return out;
+  }
+
+  /** GET .../Processes/UiPath.Server.Configuration.OData.DownloadPackage(key='<packageId>:<version>'). Requires the Packages.View permission.
+   *  The body is streamed with a hard size cap; it is never written to disk here. The key format is unverified against a live Orchestrator. */
+  async downloadPackage(a: { packageId: string; version: string; folder?: SourceFolder; maxBytes: number }): Promise<PackageDownload> {
+    const key = `${a.packageId}:${a.version}`;
+    const url = new URL(`${this.root}/odata/Processes/UiPath.Server.Configuration.OData.DownloadPackage(key='${encodeURIComponent(key)}')`);
+    let token: string;
+    try { token = this.token(); } catch (e) { return { ok: false, code: "error", message: (e as Error).message }; }
+    const headers: Record<string, string> = { Authorization: `Bearer ${token}`, Accept: "application/octet-stream" };
+    if (a.folder) { headers["X-UIPATH-OrganizationUnitId"] = a.folder.id; if (a.folder.key) headers["X-UIPATH-FolderKey"] = a.folder.key; }
+    const ac = new AbortController(), timer = setTimeout(() => ac.abort(), 120_000);
+    try {
+      const res = await (this.deps.fetch ?? fetch)(url.toString(), { method: "GET", headers, signal: ac.signal });
+      if (res.status === 401 || res.status === 403) return { ok: false, code: "denied", message: "Forbidden: the token lacks the Packages.View permission (or is invalid). No package was downloaded." };
+      if (res.status === 404) return { ok: false, code: "not_found", message: `Package ${key} was not found on the feed.` };
+      if (!res.ok) return { ok: false, code: "error", message: `Orchestrator returned HTTP ${res.status} for DownloadPackage.` };
+      const declared = Number(res.headers.get("content-length") ?? 0);
+      if (declared > a.maxBytes) { ac.abort(); return { ok: false, code: "too_large", message: `Package is ${declared} bytes, over the ${a.maxBytes} byte limit.` }; }
+      const chunks: Buffer[] = []; let size = 0;
+      const reader = res.body?.getReader();
+      if (!reader) return { ok: false, code: "error", message: "Empty response body." };
+      for (;;) { const { done, value } = await reader.read(); if (done) break; size += value.length; if (size > a.maxBytes) { ac.abort(); return { ok: false, code: "too_large", message: `Package exceeded the ${a.maxBytes} byte limit while downloading.` }; } chunks.push(Buffer.from(value)); }
+      return { ok: true, bytes: Buffer.concat(chunks) };
+    } catch (e) { return { ok: false, code: "error", message: (e as Error).name === "AbortError" ? "DownloadPackage timed out." : `Network error: ${(e as Error).message}` }; }
+    finally { clearTimeout(timer); }
   }
 
   async testConnection(): Promise<TestResult> {

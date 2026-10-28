@@ -1,7 +1,8 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { Db } from "@/db/client";
-import { assetMetadata, automationProcesses, executionJobs, folders, processVersions, queueSignals, queues, triggers } from "@/db/schema";
-import type { ExceptionAiItem, ProcessFacts } from "@/assessment/types";
+import { assetMetadata, automationProcesses, executionJobs, folders, packageAnalyses, packageDiffs, processVersions, queueSignals, queues, triggers } from "@/db/schema";
+import type { PackageDiff, PackageGraph } from "@/analysis/types";
+import type { ExceptionAiItem, PackageFacts, ProcessFacts } from "@/assessment/types";
 import type { TenantContext } from "@/lib/tenant";
 
 const DAY = 86400_000;
@@ -25,7 +26,9 @@ async function loadBundle(db: Db, ctx: TenantContext, connectorId: string, proce
     db.select().from(queueSignals).where(eq(queueSignals.tenantId, t)),
   ]);
   const assets = ids.length === 0 ? [] : await db.select().from(assetMetadata).where(eq(assetMetadata.tenantId, t));
-  return { procs: one(procs), folders: fs as (typeof folders.$inferSelect)[], jobs: jobs as (typeof executionJobs.$inferSelect)[], vers: vers as (typeof processVersions.$inferSelect)[], trigs: trigs as (typeof triggers.$inferSelect)[], qs: qs as (typeof queues.$inferSelect)[], sigs: sigs as (typeof queueSignals.$inferSelect)[], assets, processIds };
+  const analyses = ids.length === 0 ? [] : await db.select().from(packageAnalyses).where(inArray(packageAnalyses.processId, ids));
+  const diffs = ids.length === 0 ? [] : await db.select().from(packageDiffs).where(inArray(packageDiffs.processId, ids));
+  return { analyses, diffs, procs: one(procs), folders: fs as (typeof folders.$inferSelect)[], jobs: jobs as (typeof executionJobs.$inferSelect)[], vers: vers as (typeof processVersions.$inferSelect)[], trigs: trigs as (typeof triggers.$inferSelect)[], qs: qs as (typeof queues.$inferSelect)[], sigs: sigs as (typeof queueSignals.$inferSelect)[], assets, processIds };
 }
 
 function statsFor(b: Bundle, processId: string, now: number, windowDays: number) {
@@ -43,6 +46,24 @@ function statsFor(b: Bundle, processId: string, now: number, windowDays: number)
     escalated: jobs.filter((j) => j.infoMessage && ESCALATION.test(j.infoMessage)).length,
     topErrors: [...errCounts].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([text, count]) => ({ text, count })),
     uiFaults: faulted.filter((j) => j.infoMessage && UI_FAULT.test(j.infoMessage)).length,
+  };
+}
+
+function packageFacts(b: Bundle, p: typeof automationProcesses.$inferSelect): PackageFacts | null {
+  const a = b.analyses.filter((x) => x.processId === p.id && x.isDeployed).sort((x, y) => y.createdAt.getTime() - x.createdAt.getTime())[0];
+  if (!a) return null;
+  const g = a.graph as PackageGraph | null, T = g?.totals;
+  const d = a.sourceStatus === "source_available" ? b.diffs.filter((x) => x.toAnalysisId === a.id).sort((x, y) => y.createdAt.getTime() - x.createdAt.getTime())[0] : undefined;
+  const ds = d?.summary as PackageDiff | undefined;
+  return {
+    analysisId: a.id, deployedVersion: p.currentVersion, analyzedVersion: a.version, versionMatches: a.version === p.currentVersion, status: a.sourceStatus as PackageFacts["status"], failure: a.failure, failureDetail: a.failureDetail,
+    coverage: a.sourceStatus === "source_available" ? a.coverage : 0, identityMatches: a.identityMatches, workflows: g?.workflows.filter((w) => w.parsed && !w.test).length ?? 0, activities: T?.activities ?? 0,
+    ui: { actions: T?.byCategory.ui ?? 0, imageBased: T?.byCategory.imageBased ?? 0, selectors: T?.ui.selectors ?? 0, fragile: T?.ui.fragile ?? 0, idx: T?.ui.idx ?? 0 },
+    integrations: { api: T?.byCategory.api ?? 0, database: T?.byCategory.database ?? 0, file: T?.byCategory.file ?? 0, email: T?.byCategory.email ?? 0, queue: T?.byCategory.queue ?? 0, document: T?.byCategory.document ?? 0, code: T?.byCategory.code ?? 0 },
+    control: { branches: T?.control.branches ?? 0, loops: T?.control.loops ?? 0, retries: T?.control.retries ?? 0, tryCatch: T?.control.tryCatch ?? 0, catches: T?.control.catches ?? 0, continueOnError: T?.control.continueOnError ?? 0, businessRuleExceptions: T?.control.businessRuleExceptions ?? 0, cyclomatic: T?.control.cyclomatic ?? 0 },
+    hardcoded: { secrets: T?.integrations.hardcodedSecrets ?? 0, connectionStrings: T?.integrations.hardcodedConnectionStrings ?? 0, paths: T?.integrations.hardcodedPaths ?? 0, emails: T?.integrations.hardcodedEmails ?? 0 },
+    embedded: { scripts: g?.embedded.scripts ?? 0, executables: g?.embedded.executables ?? 0 },
+    diff: ds ? { fromVersion: ds.fromVersion, comparable: ds.comparable, workflowsTotal: ds.workflowsTotal, selectorUnion: ds.selectorUnion, changeRatio: ds.changeRatio, selectorChurn: ds.selectorChurn, workflowsChanged: ds.workflowsChanged.length, workflowsAdded: ds.workflowsAdded.length, workflowsRemoved: ds.workflowsRemoved.length, dependencyChanges: ds.dependencyChanges.added.length + ds.dependencyChanges.removed.length + ds.dependencyChanges.changed.length } : null,
   };
 }
 
@@ -69,6 +90,7 @@ export async function buildAllFacts(db: Db, ctx: TenantContext, connectorId: str
       queue: sig && q ? { name: q.name, total: sig.total, successRate: sig.total ? sig.successful / sig.total : 0, businessExceptionRate: sig.total ? sig.businessExceptions / sig.total : 0, applicationExceptionRate: sig.total ? sig.applicationExceptions / sig.total : 0, abandonedRate: sig.total ? sig.abandoned / sig.total : 0, retriedRate: sig.total ? sig.retried / sig.total : 0, topReasons: sig.topErrorReasons } : null,
       folderAssets: { total: folderAssets.length, credentialLike: folderAssets.filter((a) => CREDENTIAL_TYPES.has(a.valueType.toLowerCase())).length },
       duplicatesOf: b.procs.filter((o) => o.id !== p.id && o.packageId === p.packageId).map((o) => ({ processName: o.name, jobs: stats.get(o.id)!.total, version: o.currentVersion })),
+      package: packageFacts(b, p),
       exceptionAi: ai && ai.byProcess.get(p.id) ? { method: ai.method, model: ai.model, items: ai.byProcess.get(p.id)! } : null,
       stableSiblingTools: siblings.map((o) => ({ name: o.name, s: stats.get(o.id)! })).filter((x) => x.s.total >= 30 && x.s.failureRate <= 0.1).map((x) => ({ name: x.name, failureRate: x.s.failureRate, jobs: x.s.total })),
     };

@@ -19,12 +19,16 @@ export type EstateIssue = { entity: string; folder?: string; message: string };
 
 export type TestResult = { ok: boolean; message: string; details?: Record<string, string | number | boolean> };
 
+export type PackageDownload = { ok: true; bytes: Buffer } | { ok: false; code: "denied" | "not_found" | "too_large" | "error"; message: string };
+
 export interface EstateConnector {
   readonly kind: string;
   testConnection(): Promise<TestResult>;
   listFolders(): Promise<{ folders: SourceFolder[]; issues: EstateIssue[] }>;
   listMachines(): Promise<{ machines: SourceMachine[]; issues: EstateIssue[] }>;
   fetchFolder(folder: SourceFolder, opts: { jobWindowDays: number }): Promise<{ snapshot: FolderSnapshot; issues: EstateIssue[] }>;
+  /** Read-only: downloads the exact package version. Optional; only called when package analysis is opted in. */
+  downloadPackage?(args: { packageId: string; version: string; folder?: SourceFolder; maxBytes: number }): Promise<PackageDownload>;
 }
 
 export type ConnectorConfig = {

@@ -1,7 +1,7 @@
 import { CATEGORY_INFO, type ExceptionCategory } from "@/ai/taxonomy";
 import type { ExceptionAiItem, Finding, ProcessFacts } from "./types";
 
-export const RULESET_VERSION = "rules-2026.11.0";
+export const RULESET_VERSION = "rules-2026.12.0";
 
 const DOC = /(layout|ocr|extract|pdf|scan|attachment|unstructured|intent|classif|invoice|document|email)/i;
 const REASON_DOC = /(layout|ocr|unstructured|attachment|intent|language|confidence|not recogni[sz]ed)/i;
@@ -20,6 +20,12 @@ export function aiMix(items: ExceptionAiItem[]) {
   const share = (c: ExceptionCategory) => (total ? (by.get(c) ?? 0) / total : 0);
   return { total, by, share, labelled: [...by.values()].reduce((a, b) => a + b, 0) };
 }
+
+/** Package evidence is trusted for eligibility/risk only when it is the deployed version, matches the package identity, and >=80% of workflow files parsed from source. */
+export const MIN_PACKAGE_COVERAGE = 0.8;
+export const packageUsable = (f: ProcessFacts) => !!f.package && f.package.status === "source_available" && f.package.versionMatches && f.package.identityMatches !== false;
+export const packageTrusted = (f: ProcessFacts) => packageUsable(f) && f.package!.coverage >= MIN_PACKAGE_COVERAGE;
+const ppct = (x: number) => `${Math.round(x * 100)}%`;
 
 export type Rule = { id: string; description: string; evaluate: (f: ProcessFacts) => Finding | null };
 
@@ -144,6 +150,46 @@ export const RULES: Rule[] = [
       if (m.share("reference_data_missing") >= 0.3) return { ruleId: "R16-ai-exception-risk", signal: "Reference-data exceptions", observed: `${Math.round(m.share("reference_data_missing") * 100)}% of labelled exception occurrences are missing reference data (lookup/master data)`, effect: "Risk: these failures are data-quality problems; adding AI will not fix them. Fix master data first.", votes: {}, risk: { code: "DATA_QUALITY_EXCEPTIONS", text: "Exceptions dominated by missing reference data (AI-inferred)", weight: 5 }, sourceEntity: "queue_signals", sourceRefs: ["ai_evidence"], provenance: "ai_inferred", detail: ai.items };
       if (m.share("ui_fragility") >= 0.5) return { ruleId: "R16-ai-exception-risk", signal: "UI-fragility exceptions", observed: `${Math.round(m.share("ui_fragility") * 100)}% of labelled exception occurrences are UI selector/element failures`, effect: "Risk: corroborates volatile UI automation. Does not raise the redesign flag on its own.", votes: {}, risk: { code: "UI_EXCEPTIONS_AI", text: "Exceptions dominated by UI failures (AI-inferred)", weight: 5 }, sourceEntity: "execution_jobs", sourceRefs: ["ai_evidence"], provenance: "ai_inferred", detail: ai.items };
       return null;
+    },
+  },
+  {
+    id: "R17-package-volatility", description: "The structure of the deployed package differs a lot from the previous version",
+    evaluate: (f) => {
+      const d = f.package?.diff; if (!d || !d.comparable || !packageUsable(f)) return null;
+      // ratios are meaningless on tiny packages: require enough workflows (or selectors) before a change counts as volatility
+      const structural = d.workflowsTotal >= 4 && d.changeRatio >= 0.5, selectors = d.selectorUnion >= 5 && d.selectorChurn >= 0.5;
+      if (!structural && !selectors) return null;
+      return { ruleId: "R17-package-volatility", signal: "Package change volatility", observed: `v${d.fromVersion} -> v${f.package!.deployedVersion}: ${ppct(d.changeRatio)} of workflows changed/added/removed (${d.workflowsChanged} changed, ${d.workflowsAdded} added, ${d.workflowsRemoved} removed); ${ppct(d.selectorChurn)} selector churn; ${d.dependencyChanges} dependency change(s)`, effect: "Risk: large structural change between versions suggests an unstable or still-evolving process. Does not by itself imply agentic.", votes: {}, risk: { code: "PACKAGE_VOLATILITY", text: `${ppct(d.changeRatio)} workflow change, ${ppct(d.selectorChurn)} selector churn since v${d.fromVersion}`, weight: 10 }, sourceEntity: "package_analyses", sourceRefs: [`package:${f.package!.deployedVersion}`, `package:${d.fromVersion}`] };
+    },
+  },
+  {
+    id: "R18-fragile-selectors", description: "Most UI selectors rely on position, dynamic ids or lack a stable attribute",
+    evaluate: (f) => {
+      if (!packageTrusted(f)) return null; const u = f.package!.ui; if (u.selectors < 5 || u.fragile / u.selectors < 0.5) return null;
+      return { ruleId: "R18-fragile-selectors", signal: "Fragile UI selectors", observed: `${u.fragile} of ${u.selectors} selectors use positional idx, dynamic ids or have no stable attribute (${u.idx} use idx); ${u.imageBased} image/OCR-based action(s)`, effect: "Risk: static evidence of brittle UI automation. An agent on top would inherit this fragility.", votes: {}, risk: { code: "FRAGILE_SELECTORS", text: `${u.fragile}/${u.selectors} fragile selectors`, weight: 15 }, sourceEntity: "package_analyses", sourceRefs: [`package:${f.package!.deployedVersion}`] };
+    },
+  },
+  {
+    id: "R19-no-error-handling", description: "A non-trivial workflow set with no try/catch or retry scope",
+    evaluate: (f) => {
+      if (!packageTrusted(f)) return null; const p = f.package!; if (p.activities < 15 || p.control.tryCatch > 0 || p.control.retries > 0) return null;
+      return { ruleId: "R19-no-error-handling", signal: "No error handling found", observed: `${p.activities} activities across ${p.workflows} workflow(s) and no Try/Catch or Retry Scope`, effect: "Risk: failures will propagate as faults; consider adding exception handling before any migration.", votes: {}, risk: { code: "NO_ERROR_HANDLING", text: "No try/catch or retry scope in the package", weight: 10 }, sourceEntity: "package_analyses", sourceRefs: [`package:${p.deployedVersion}`] };
+    },
+  },
+  {
+    id: "R20-hardcoded-literals", description: "Secrets, connection strings, absolute paths or email addresses hard-coded in workflows",
+    evaluate: (f) => {
+      const p = f.package; if (!p || p.status !== "source_available" || !p.versionMatches) return null; const h = p.hardcoded;
+      if (h.secrets > 0) return { ruleId: "R20-hardcoded-literals", signal: "Hard-coded secret suspected", observed: `${h.secrets} password/key/token-style property value(s) are literals in the workflows (values not recorded)`, effect: "Risk: credentials should come from Orchestrator assets. Rotate and externalise before any migration.", votes: {}, risk: { code: "HARDCODED_SECRETS", text: `${h.secrets} suspected hard-coded secret(s)`, weight: 15 }, sourceEntity: "package_analyses", sourceRefs: [`package:${p.deployedVersion}`] };
+      if (h.connectionStrings + h.paths + h.emails > 0) return { ruleId: "R20-hardcoded-literals", signal: "Hard-coded environment literals", observed: `${h.connectionStrings} connection string(s), ${h.paths} absolute path(s), ${h.emails} email address(es) are literals (values not recorded)`, effect: "Risk: environment-specific values in code make promotion and migration harder.", votes: {}, risk: { code: "HARDCODED_LITERALS", text: "Environment-specific literals in workflows", weight: 5 }, sourceEntity: "package_analyses", sourceRefs: [`package:${p.deployedVersion}`] };
+      return null;
+    },
+  },
+  {
+    id: "R21-swallowed-errors", description: "Several activities set ContinueOnError, which hides failures",
+    evaluate: (f) => {
+      if (!packageTrusted(f)) return null; const c = f.package!.control.continueOnError; if (c < 3) return null;
+      return { ruleId: "R21-swallowed-errors", signal: "Errors swallowed", observed: `${c} activities are set to ContinueOnError = True`, effect: "Risk: failures may be silent, so telemetry can understate real problems.", votes: {}, risk: { code: "ERRORS_SWALLOWED", text: `${c} activities continue on error`, weight: 5 }, sourceEntity: "package_analyses", sourceRefs: [`package:${f.package!.deployedVersion}`] };
     },
   },
 ];

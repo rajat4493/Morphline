@@ -8,6 +8,9 @@ import type { TenantContext } from "@/lib/tenant";
 import { resolveClassifier, type ResolvedAi } from "@/ai/config";
 import { buildAllFacts, type AiFacts } from "./facts";
 import { runExceptionAi } from "./exception-ai";
+import { rebuildDependencies } from "./dependencies";
+import { runPackageAnalysis } from "./package-analysis";
+import type { ProcessFacts } from "@/assessment/types";
 import { buildConnector, getConnectorRow } from "./connectors";
 
 export const JOB_WINDOW_DAYS = 90;
@@ -15,7 +18,7 @@ const d = (x?: string) => (x ? new Date(x) : null);
 
 export type ImportSummary = { importRunId: string; status: "success" | "partial" | "failed"; counts: Record<string, number>; errors: EstateIssue[] };
 
-export async function runImport(db: Db, ctx: TenantContext, connectorId: string, overrides: { fetch?: typeof fetch; env?: Record<string, string | undefined>; connector?: EstateConnector; ai?: Pick<ResolvedAi, "classifier"> } = {}): Promise<ImportSummary> {
+export async function runImport(db: Db, ctx: TenantContext, connectorId: string, overrides: { fetch?: typeof fetch; env?: Record<string, string | undefined>; connector?: EstateConnector; ai?: Pick<ResolvedAi, "classifier">; skipPackageAnalysis?: boolean } = {}): Promise<ImportSummary> {
   const row = await getConnectorRow(db, ctx, connectorId);
   if (!row) throw new Error("Connector not found");
   const connector = overrides.connector ?? buildConnector(row, overrides);
@@ -89,8 +92,6 @@ export async function runImport(db: Db, ctx: TenantContext, connectorId: string,
         counts.triggers++;
         if (tr.queueName && queueRows.has(tr.queueName)) {
           await db.update(s.queues).set({ processId: pr.id }).where(eq(s.queues.id, queueRows.get(tr.queueName)!.id));
-          await db.insert(s.dependencies).values({ tenantId: t, processId: pr.id, kind: "queue", name: tr.queueName, detail: `Started by queue trigger ${tr.name}`, origin: "queue_trigger" });
-          counts.dependencies++;
         }
       }
 
@@ -99,14 +100,14 @@ export async function runImport(db: Db, ctx: TenantContext, connectorId: string,
       counts.assets += snapshot.assets.length;
     }
 
-    // Derived dependencies: shared package between processes, and folder-scope assets (usage by a process is NOT known from the API).
-    const all = await db.select().from(s.automationProcesses).where(and(eq(s.automationProcesses.connectorId, connectorId), eq(s.automationProcesses.tenantId, t)));
-    await db.delete(s.dependencies).where(and(inArray(s.dependencies.processId, all.map((p) => p.id)), inArray(s.dependencies.origin, ["shared_package", "folder_asset"])));
-    for (const p of all) {
-      for (const o of all.filter((x) => x.id !== p.id && x.packageId === p.packageId)) { await db.insert(s.dependencies).values({ tenantId: t, processId: p.id, kind: "process", name: o.name, detail: `Shares package ${p.packageId}`, origin: "shared_package" }); counts.dependencies++; }
-      const assets = await db.select().from(s.assetMetadata).where(eq(s.assetMetadata.folderId, p.folderId));
-      for (const a of assets) { await db.insert(s.dependencies).values({ tenantId: t, processId: p.id, kind: "asset", name: a.name, detail: `${a.valueType} asset in folder scope (usage by this process not determinable from API)`, origin: "folder_asset" }); counts.dependencies++; }
+    // Optional package analysis (opt-in): downloads the exact deployed version, analyses it in the sandbox, stores derived facts only.
+    if (row.packageAnalysisEnabled && row.packagePermissionConfirmed && !overrides.skipPackageAnalysis) {
+      const pr = await runPackageAnalysis(db, ctx, row, connector);
+      errors.push(...pr.issues);
+      counts.packages_analyzed = pr.stats.analyzed; counts.packages_cached = pr.stats.cached; counts.packages_failed = pr.stats.failed; counts.package_diffs = pr.stats.diffs;
     }
+    // Dependencies are rebuilt from scratch each import (with their evidence basis), so repeated imports never accumulate duplicates.
+    counts.dependencies = await rebuildDependencies(db, ctx, connectorId);
 
     // Optional AI evidence layer: label exception texts. Failure here never blocks the import (deterministic rules still run).
     const resolved = overrides.ai ?? resolveClassifier({ isDemo: row.isDemo });
@@ -120,13 +121,7 @@ export async function runImport(db: Db, ctx: TenantContext, connectorId: string,
 
     // Assess every imported process in this connector.
     const facts = await buildAllFacts(db, ctx, connectorId, JOB_WINDOW_DAYS, Date.now(), aiFacts);
-    for (const f of facts) {
-      const r = assess(f);
-      const [a] = await db.insert(s.assessments).values({ tenantId: t, processId: f.processId, importRunId: run.id, ruleVersion: r.ruleVersion, recommendation: r.recommendation, confidence: r.confidence, opportunityScore: r.opportunityScore, riskScore: r.riskScore, rationale: r.rationale, riskFlags: r.riskFlags, missingInformation: r.missingInformation, nextStep: r.nextStep, logicAnalysis: r.logicAnalysis, redesignReview: r.redesignReview, runnerUp: r.runnerUp, inputHash: r.inputHash, scores: r.scores }).returning();
-      if (r.findings.length) await db.insert(s.assessmentEvidence).values(r.findings.map((e) => ({ tenantId: t, assessmentId: a.id, ruleId: e.ruleId, signal: e.signal, observed: e.observed, effect: e.effect, weight: Object.values(e.votes).reduce((x, y) => x + (y ?? 0), 0) + (e.risk?.weight ?? 0) / 100, sourceEntity: e.sourceEntity, sourceRefs: e.sourceRefs, provenance: e.provenance ?? "deterministic", detail: e.detail ?? null })));
-      await audit(db, ctx, "assessment.created", "assessment", a.id, { processId: f.processId, recommendation: r.recommendation, confidence: r.confidence, ruleVersion: r.ruleVersion, inputHash: r.inputHash });
-      counts.assessments++;
-    }
+    for (const f of facts) { await assessAndStore(db, ctx, f, run.id); counts.assessments++; }
 
     const status = errors.length ? "partial" : "success";
     await db.update(s.importRuns).set({ status, finishedAt: new Date(), counts, errors }).where(eq(s.importRuns.id, run.id));
@@ -138,4 +133,13 @@ export async function runImport(db: Db, ctx: TenantContext, connectorId: string,
     await audit(db, ctx, "import.failed", "import_run", run.id, { message: (e as Error).message });
     return { importRunId: run.id, status: "failed", counts, errors };
   }
+}
+
+/** Runs the deterministic rules on one process's facts and persists the assessment, its evidence and an audit event. */
+export async function assessAndStore(db: Db, ctx: TenantContext, f: ProcessFacts, importRunId: string | null) {
+  const t = ctx.tenantId, r = assess(f);
+  const [a] = await db.insert(s.assessments).values({ tenantId: t, processId: f.processId, importRunId, ruleVersion: r.ruleVersion, recommendation: r.recommendation, confidence: r.confidence, opportunityScore: r.opportunityScore, riskScore: r.riskScore, rationale: r.rationale, riskFlags: r.riskFlags, missingInformation: r.missingInformation, nextStep: r.nextStep, logicAnalysis: r.logicAnalysis, redesignReview: r.redesignReview, runnerUp: r.runnerUp, inputHash: r.inputHash, eligibility: r.eligibility, packageAnalysisId: r.packageAnalysisId, scores: r.scores }).returning();
+  if (r.findings.length) await db.insert(s.assessmentEvidence).values(r.findings.map((e) => ({ tenantId: t, assessmentId: a.id, ruleId: e.ruleId, signal: e.signal, observed: e.observed, effect: e.effect, weight: Object.values(e.votes).reduce((x, y) => x + (y ?? 0), 0) + (e.risk?.weight ?? 0) / 100, sourceEntity: e.sourceEntity, sourceRefs: e.sourceRefs, provenance: e.provenance ?? "deterministic", detail: e.detail ?? null })));
+  await audit(db, ctx, "assessment.created", "assessment", a.id, { processId: f.processId, recommendation: r.recommendation, confidence: r.confidence, ruleVersion: r.ruleVersion, inputHash: r.inputHash, logicAnalysis: r.logicAnalysis, packageAnalysisId: r.packageAnalysisId });
+  return a;
 }
