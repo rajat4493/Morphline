@@ -1,5 +1,5 @@
 {
-  "id": "a11a5e87-d4b6-4527-8561-79264fb7ae3d",
+  "id": "d982d9c4-bfce-485d-a63e-8b6b9ff67806",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -195,6 +195,19 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'unavailable'"
+        },
+        "redesign_review": {
+          "name": "redesign_review",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "runner_up": {
+          "name": "runner_up",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "input_hash": {
           "name": "input_hash",

@@ -26,6 +26,8 @@ CREATE TABLE "assessments" (
 	"missing_information" jsonb NOT NULL,
 	"next_step" text NOT NULL,
 	"logic_analysis" text DEFAULT 'unavailable' NOT NULL,
+	"redesign_review" boolean DEFAULT false NOT NULL,
+	"runner_up" text,
 	"input_hash" text NOT NULL,
 	"scores" jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL

@@ -90,7 +90,7 @@ export const assessments = pgTable("assessments", {
   id: id(), tenantId: tenantId(), processId: uuid("process_id").notNull().references(() => automationProcesses.id, { onDelete: "cascade" }), importRunId: uuid("import_run_id"),
   ruleVersion: text("rule_version").notNull(), recommendation: text("recommendation").notNull(), confidence: integer("confidence").notNull(), opportunityScore: integer("opportunity_score").notNull(),
   riskScore: integer("risk_score").notNull(), rationale: jsonb("rationale").$type<string[]>().notNull(), riskFlags: jsonb("risk_flags").$type<string[]>().notNull(),
-  missingInformation: jsonb("missing_information").$type<string[]>().notNull(), nextStep: text("next_step").notNull(), logicAnalysis: text("logic_analysis").notNull().default("unavailable"),
+  missingInformation: jsonb("missing_information").$type<string[]>().notNull(), nextStep: text("next_step").notNull(), logicAnalysis: text("logic_analysis").notNull().default("unavailable"), redesignReview: boolean("redesign_review").notNull().default(false), runnerUp: text("runner_up"),
   inputHash: text("input_hash").notNull(), scores: jsonb("scores").$type<Record<string, number>>().notNull(), createdAt: createdAt(),
 }, (t) => [index("assess_proc").on(t.processId, t.createdAt)]);
 
