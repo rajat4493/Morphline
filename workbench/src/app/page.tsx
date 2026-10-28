@@ -1,3 +1,4 @@
+import { dt, day } from "@/lib/fmt";
 import Link from "next/link";
 import { RECOMMENDATIONS, RECOMMENDATION_LABEL } from "@/assessment/types";
 import { applyFilters, parseFilters } from "@/lib/filters";
@@ -42,7 +43,7 @@ export default async function Overview({ searchParams }: { searchParams: Record<
           {RECOMMENDATIONS.map((r) => <div className="bar" key={r}><span className="t"><RecBadge rec={r} /></span><span className="f" style={{ width: `${(counts[r] / max) * 55}%` }} aria-hidden /><strong>{counts[r]}</strong></div>)}</section>
         <section className="card" aria-labelledby="imp"><h2 id="imp">Recent imports</h2>
           <table><caption className="sr">Recent import runs</caption><thead><tr><th>When</th><th>Connector</th><th>Status</th><th className="num">Processes</th></tr></thead><tbody>
-            {imports.map(({ run, connector }) => <tr key={run.id}><td>{run.startedAt.toLocaleString()}</td><td>{connector}</td><td><span className={`badge ${run.status === "success" ? "b-ok" : run.status === "partial" ? "b-warn" : "b-bad"}`}>{run.status}</span></td><td className="num">{run.counts.processes ?? 0}</td></tr>)}</tbody></table>
+            {imports.map(({ run, connector }) => <tr key={run.id}><td>{dt(run.startedAt)}</td><td>{connector}</td><td><span className={`badge ${run.status === "success" ? "b-ok" : run.status === "partial" ? "b-warn" : "b-bad"}`}>{run.status}</span></td><td className="num">{run.counts.processes ?? 0}</td></tr>)}</tbody></table>
           <p><Link href="/connectors">Manage imports</Link></p></section>
         <section className="card" aria-labelledby="risk"><h2 id="risk">Top risk</h2>
           <table><thead><tr><th>Process</th><th className="num">Risk</th><th>Recommendation</th></tr></thead><tbody>{risk.map((r) => <tr key={r.id}><td><ProcessLink id={r.id} name={r.name} />{r.redesign && <> <span className="badge b-bad">Redesign review</span></>}</td><td className="num">{r.risk}</td><td><RecBadge rec={r.recommendation} /></td></tr>)}</tbody></table></section>

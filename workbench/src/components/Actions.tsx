@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function ActionButton({ url, method = "POST", label, busy, secondary, redirectTo, body }: { url: string; method?: string; label: string; busy?: string; secondary?: boolean; redirectTo?: (r: any) => string; body?: unknown }) {
+export function ActionButton({ url, method = "POST", label, busy, secondary, redirectTo, body }: { url: string; method?: string; label: string; busy?: string; secondary?: boolean; redirectTo?: string; /* e.g. "/plans/{planId}" filled from the JSON response */ body?: unknown }) {
   const router = useRouter();
   const [state, setState] = useState<{ loading: boolean; msg?: string; ok?: boolean }>({ loading: false });
   return (
@@ -14,7 +14,7 @@ export function ActionButton({ url, method = "POST", label, busy, secondary, red
           const data = await res.json().catch(() => ({}));
           if (!res.ok) { setState({ loading: false, ok: false, msg: data.error ?? `Request failed (${res.status})` }); return; }
           setState({ loading: false, ok: data.ok ?? data.status !== "failed", msg: data.message ?? (data.status ? `Import ${data.status}${data.errors?.length ? `: ${data.errors.length} issue(s)` : ""}` : undefined) });
-          if (redirectTo) router.push(redirectTo(data)); else router.refresh();
+          if (redirectTo) router.push(redirectTo.replace(/\{(\w+)\}/g, (_, k) => encodeURIComponent(String(data[k] ?? "")))); else router.refresh();
         } catch (e) { setState({ loading: false, ok: false, msg: (e as Error).message }); }
       }}>{state.loading ? (busy ?? "Working…") : label}</button>
       <span role="status" aria-live="polite" className={state.ok === false ? "badge b-bad" : "muted"} style={{ marginLeft: 8 }}>{state.msg}</span>

@@ -10,7 +10,7 @@ header.top strong{font-size:16px}nav{display:flex;gap:4px;flex-wrap:wrap}nav a{p
 main{max-width:1200px;margin:0 auto;padding:20px 16px 60px}
 h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:0 0 10px}h3{font-size:15px;margin:14px 0 6px}
 .sub{color:var(--muted);margin:0 0 18px}
-.grid{display:grid;gap:16px}.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.grid{display:grid;gap:16px}.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr))}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;overflow-x:auto}
 .stat .n{font-size:28px;font-weight:700}.stat .l{color:var(--muted);font-size:13px}
 table{border-collapse:collapse;width:100%;font-size:14px}caption{text-align:left;color:var(--muted);padding-bottom:6px}

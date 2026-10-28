@@ -1,3 +1,4 @@
+import { dt, day } from "@/lib/fmt";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
@@ -20,7 +21,7 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
     <>
       <p><Link href={`/processes/${plan.processId}`}>← {c.processName}</Link></p>
       <h1>Migration plan: {c.processName}</h1>
-      <p className="sub">{c.recommendationLabel} · confidence {c.confidence}/100 · rules {c.ruleVersion} · generated {new Date(c.generatedAt).toLocaleString()}</p>
+      <p className="sub">{c.recommendationLabel} · confidence {c.confidence}/100 · rules {c.ruleVersion} · generated {dt(new Date(c.generatedAt))}</p>
       <p><a className="btn" href={`/api/plans/${plan.id}/export?format=md`}>Export Markdown</a> <a className="btn secondary" href={`/api/plans/${plan.id}/export?format=html`}>Export HTML</a></p>
       <div className="notice" role="note"><strong>Logic analysis unavailable.</strong> Based on operational data only; decision logic inside the package has not been analysed.</div>
       {plan.narrative && <section className="card" style={{ marginBottom: 16 }}><h2>Summary (draft)</h2><p className="draft">{AI_DRAFT_NOTICE}</p><p>{plan.narrative}</p></section>}
@@ -38,7 +39,7 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
         <section className="card"><h2>Unknowns</h2><L xs={c.unknowns} /></section>
       </div>
       <section className="card" style={{ marginTop: 16 }}><h2>Evidence trail</h2><L xs={c.evidence.map((e) => `${e.signal} [${e.ruleId}]: ${e.observed}`)} />
-        <h3>Audit record</h3><table><thead><tr><th>When</th><th>Action</th><th>Actor</th></tr></thead><tbody>{audit.map((e) => <tr key={e.id}><td>{e.at.toLocaleString()}</td><td>{e.action}</td><td>{e.actor}</td></tr>)}</tbody></table></section>
+        <h3>Audit record</h3><table><thead><tr><th>When</th><th>Action</th><th>Actor</th></tr></thead><tbody>{audit.map((e) => <tr key={e.id}><td>{dt(e.at)}</td><td>{e.action}</td><td>{e.actor}</td></tr>)}</tbody></table></section>
     </>
   );
 }

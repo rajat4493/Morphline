@@ -55,7 +55,7 @@ export const executionJobs = pgTable("execution_jobs", {
 export const queues = pgTable("queues", {
   id: id(), tenantId: tenantId(), folderId: uuid("folder_id").notNull().references(() => folders.id), sourceId: text("source_id").notNull(), name: text("name").notNull(),
   maxRetries: integer("max_retries"), processId: uuid("process_id").references(() => automationProcesses.id, { onDelete: "set null" }), raw: jsonb("raw").notNull(),
-});
+}, (t) => [uniqueIndex("queues_src").on(t.folderId, t.sourceId)]);
 
 /** Aggregated queue-item outcome signals per queue per import (no item payloads are stored). */
 export const queueSignals = pgTable("queue_signals", {

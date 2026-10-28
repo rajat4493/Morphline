@@ -1,5 +1,5 @@
 {
-  "id": "d982d9c4-bfce-485d-a63e-8b6b9ff67806",
+  "id": "7a0b9391-baba-4856-9010-ba6cc5a113fd",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1688,7 +1688,29 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "queues_src": {
+          "name": "queues_src",
+          "columns": [
+            {
+              "expression": "folder_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "queues_tenant_id_tenants_id_fk": {
           "name": "queues_tenant_id_tenants_id_fk",

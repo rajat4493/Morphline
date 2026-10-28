@@ -4,7 +4,7 @@ export const RULESET_VERSION = "rules-2026.10.1";
 
 const DOC = /(layout|ocr|extract|pdf|scan|attachment|unstructured|intent|classif|invoice|document|email)/i;
 const REASON_DOC = /(layout|ocr|unstructured|attachment|intent|language|confidence|not recogni[sz]ed)/i;
-const REASON_ROUTING = /(category|rout|triage|unclear|multiple|ambiguous|manual|judg)/i;
+const REASON_ROUTING = /(category|rout|triage|unclear|multiple|ambiguous|judg)/i;
 const UI_FAULT = /(selector|element not found|ui timeout|screen|ui element)/i;
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 

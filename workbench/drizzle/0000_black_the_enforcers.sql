@@ -260,4 +260,5 @@ CREATE INDEX "assess_proc" ON "assessments" USING btree ("process_id","created_a
 CREATE UNIQUE INDEX "proc_src" ON "automation_processes" USING btree ("connector_id","source_id");--> statement-breakpoint
 CREATE INDEX "proc_tenant" ON "automation_processes" USING btree ("tenant_id");--> statement-breakpoint
 CREATE INDEX "jobs_proc" ON "execution_jobs" USING btree ("process_id","started_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "folders_src" ON "folders" USING btree ("connector_id","source_id");
+CREATE UNIQUE INDEX "folders_src" ON "folders" USING btree ("connector_id","source_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "queues_src" ON "queues" USING btree ("folder_id","source_id");

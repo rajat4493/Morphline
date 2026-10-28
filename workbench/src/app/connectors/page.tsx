@@ -1,3 +1,4 @@
+import { dt, day } from "@/lib/fmt";
 import { desc, eq } from "drizzle-orm";
 import * as s from "@/db/schema";
 import { getContext } from "@/lib/server";
@@ -23,7 +24,7 @@ export default async function Connectors() {
         return (
           <section className="card" key={c.id} style={{ marginBottom: 16 }}>
             <h2>{c.name} {c.isDemo && <span className="badge b-warn">Simulated data</span>}</h2>
-            <p className="muted">{c.lastTestAt ? <>Last test {c.lastTestAt.toLocaleString()}: <span className={`badge ${c.lastTestOk ? "b-ok" : "b-bad"}`}>{c.lastTestOk ? "OK" : "Failed"}</span> {c.lastTestMessage}</> : "Not tested yet."}</p>
+            <p className="muted">{c.lastTestAt ? <>Last test {dt(c.lastTestAt)}: <span className={`badge ${c.lastTestOk ? "b-ok" : "b-bad"}`}>{c.lastTestOk ? "OK" : "Failed"}</span> {c.lastTestMessage}</> : "Not tested yet."}</p>
             <div className="row" style={{ marginBottom: 12 }}>
               <ActionButton url={`/api/connectors/${c.id}/test`} label="Test connection" busy="Testing…" secondary />
               <ActionButton url={`/api/connectors/${c.id}/import`} label="Run import" busy="Importing…" />
@@ -35,7 +36,7 @@ export default async function Connectors() {
       <ConnectorForm />
       <section className="card" style={{ marginTop: 16 }} aria-labelledby="hist"><h2 id="hist">Import history</h2>
         {runs.length === 0 ? <p className="muted">No imports yet.</p> : <table><thead><tr><th>Started</th><th>Connector</th><th>Status</th><th>Counts</th><th>Issues</th></tr></thead><tbody>
-          {runs.map((r) => <tr key={r.id}><td>{r.startedAt.toLocaleString()}</td><td>{names.get(r.connectorId)}</td><td><span className={`badge ${r.status === "success" ? "b-ok" : r.status === "partial" ? "b-warn" : "b-bad"}`}>{r.status}</span></td>
+          {runs.map((r) => <tr key={r.id}><td>{dt(r.startedAt)}</td><td>{names.get(r.connectorId)}</td><td><span className={`badge ${r.status === "success" ? "b-ok" : r.status === "partial" ? "b-warn" : "b-bad"}`}>{r.status}</span></td>
             <td className="mono">{Object.entries(r.counts).filter(([, v]) => v).map(([k, v]) => `${k}:${v}`).join(" ")}</td>
             <td>{r.errors.length === 0 ? "none" : <details><summary>{r.errors.length} issue(s)</summary><ul className="plain">{r.errors.map((e, i) => <li key={i}><span className="mono">{e.entity}</span>{e.folder && ` (${e.folder})`}: {e.message}</li>)}</ul></details>}</td></tr>)}</tbody></table>}</section>
     </>

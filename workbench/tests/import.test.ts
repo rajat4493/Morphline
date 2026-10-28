@@ -50,3 +50,18 @@ describe("demo import through the real connector", () => {
     expect(ev.some((e) => e.action === "import.finished")).toBe(true);
   });
 });
+
+describe("re-import", () => {
+  it("is idempotent for entities and keeps the latest assessment per process consistent", async () => {
+    const before = { procs: (await db.select().from(s.automationProcesses)).length, queues: (await db.select().from(s.queues)).length, trig: (await db.select().from(s.triggers)).length, assets: (await db.select().from(s.assetMetadata)).length };
+    const c = await createDemoConnector(db, ctx);
+    const again = await runImport(db, ctx, c.id);
+    expect(again.status).toBe("success");
+    expect({ procs: (await db.select().from(s.automationProcesses)).length, queues: (await db.select().from(s.queues)).length, trig: (await db.select().from(s.triggers)).length, assets: (await db.select().from(s.assetMetadata)).length }).toEqual(before);
+    const { inventory } = await import("@/services/queries");
+    const inv = await inventory(db, ctx);
+    expect(inv).toHaveLength(9);
+    expect(inv.find((r) => r.name === "ServiceDesk_Ticket_Triage")!.recommendation).toBe("hybrid"); // queue signals still resolve after re-import
+    expect((await db.select().from(s.assessments)).length).toBe(18); // history is kept, not overwritten
+  });
+});

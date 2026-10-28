@@ -71,7 +71,8 @@ export async function runImport(db: Db, ctx: TenantContext, connectorId: string,
 
       const queueRows = new Map<string, typeof s.queues.$inferSelect>();
       for (const q of snapshot.queues) {
-        const [qr] = await db.insert(s.queues).values({ tenantId: t, folderId: folderRow.id, sourceId: q.id, name: q.name, maxRetries: q.maxRetries ?? null, raw: q.raw as object }).returning();
+        const [qr] = await db.insert(s.queues).values({ tenantId: t, folderId: folderRow.id, sourceId: q.id, name: q.name, maxRetries: q.maxRetries ?? null, raw: q.raw as object })
+          .onConflictDoUpdate({ target: [s.queues.folderId, s.queues.sourceId], set: { name: q.name, maxRetries: q.maxRetries ?? null, raw: q.raw as object } }).returning();
         queueRows.set(q.name, qr);
         if (q.signal) await db.insert(s.queueSignals).values({ tenantId: t, queueId: qr.id, ...q.signal });
       }

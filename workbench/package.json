@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx --tsconfig tsconfig.json scripts/seed.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.13",
@@ -30,5 +30,6 @@
     "tsx": "^4.23.15",
     "typescript": "^5.5.3",
     "vitest": "^5.0.5"
-  }
+  },
+  "type": "module"
 }
