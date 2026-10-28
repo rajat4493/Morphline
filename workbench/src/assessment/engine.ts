@@ -43,7 +43,9 @@ export function assess(facts: ProcessFacts): AssessmentResult {
   const margin = maxScore > 0 ? (maxScore - second) / maxScore : 0;
   const strongEvidence = findings.filter((f) => Object.keys(f.votes).length > 0 && f.ruleId !== "R03-baseline").length;
   const dataDomains = [facts.jobs.total > 0, !!facts.queue || !facts.triggers.some((t) => t.kind === "queue"), facts.triggers.length > 0, facts.versionCount > 0].filter(Boolean).length / 4;
-  const confidence = Math.round(Math.max(10, Math.min(CONFIDENCE_CAP, 20 + 35 * margin + 25 * dataDomains + Math.min(15, strongEvidence * 5) - Math.min(15, riskFlags.length * 3) - (facts.jobs.total < 30 ? 10 : 0))));
+  const rawConfidence = Math.round(Math.max(10, Math.min(CONFIDENCE_CAP, 20 + 35 * margin + 25 * dataDomains + Math.min(15, strongEvidence * 5) - Math.min(15, riskFlags.length * 3) - (facts.jobs.total < 30 ? 10 : 0))));
+  // Only the weak default prior fired: this is a placeholder recommendation, not a finding.
+  const confidence = strongEvidence === 0 ? Math.min(rawConfidence, 40) : rawConfidence;
 
   const supportPoints = Math.max(scores.ai_augmented, scores.hybrid, scores.governed_agentic);
   const volume = facts.jobs.perDay >= 10 ? 25 : facts.jobs.perDay >= 3 ? 15 : facts.jobs.perDay >= 1 ? 8 : 0;

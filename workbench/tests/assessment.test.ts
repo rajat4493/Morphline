@@ -37,6 +37,7 @@ describe("recommendation rules", () => {
     expect(["deterministic"]).toContain(r.recommendation);
     expect(r.riskFlags.join(" ")).toMatch(/VOLATILE_UI/);
     expect(r.nextStep).toMatch(/redesign\/risk review first/);
+    expect(r.confidence).toBeLessThanOrEqual(40); // only the weak prior supports the label
   });
   it("dormant duplicate with disabled trigger -> retire", () => {
     const r = assess(base({ name: "Report_Copy", jobs: { ...base().jobs, total: 0, successful: 0, faulted: 0, failureRate: 0, perDay: 0, daysSinceLastRun: null }, triggers: [{ kind: "time", enabled: false }], duplicatesOf: [{ processName: "Report", jobs: 13, version: "1.1.0" }] }));
