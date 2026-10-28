@@ -1,1 +1,2 @@
-export default function Loading() { return <p role="status" className="muted">Loading…</p>; }
+import { PageSkeleton } from "@/components/ds";
+export default function Loading() { return <PageSkeleton />; }
