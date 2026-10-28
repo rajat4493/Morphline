@@ -8,7 +8,7 @@ export function planToMarkdown(p: PlanContent, narrative?: string | null): strin
   return [
     `# Migration plan: ${p.processName}`,
     `*Folder:* ${p.folderPath} · *Recommendation:* **${p.recommendationLabel}** (confidence ${p.confidence}/100) · *Rule set:* ${p.ruleVersion} · *Generated:* ${p.generatedAt}`,
-    `> **Logic analysis unavailable.** This plan is based on Orchestrator operational data only, not on the package's workflow logic.`,
+    p.logicAnalysis === "available" ? `> **Package analysed.** Workflow structure comes from static analysis of the deployed package. Runtime behaviour and business context were not observed.` : `> **Logic analysis ${p.logicAnalysis === "partial" ? "partial" : "unavailable"}.** This plan is based on Orchestrator operational data${p.logicAnalysis === "partial" ? " and a partly analysed package" : ", not on the package's workflow logic"}.`,
     narrative ? `## Summary (draft)\n> ${AI_DRAFT_NOTICE}\n\n${narrative}` : "",
     `## Target pattern\n**${p.targetPattern.name}.** ${p.targetPattern.description}`,
     `## Retained RPA elements\n${list(p.retainedRpaElements)}`,
@@ -33,7 +33,7 @@ export function planToHtml(p: PlanContent, narrative?: string | null): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Migration plan: ${esc(p.processName)}</title>
 <style>body{font:16px/1.5 system-ui,sans-serif;max-width:60rem;margin:2rem auto;padding:0 1rem;color:#1a1a1a}h1,h2{line-height:1.2}.note{border-left:4px solid #b45309;background:#fffbeb;padding:.5rem 1rem}.draft{border-left:4px solid #6b7280;background:#f3f4f6;padding:.5rem 1rem}</style></head><body>
 <h1>Migration plan: ${esc(p.processName)}</h1><p>${esc(p.folderPath)} · <strong>${esc(p.recommendationLabel)}</strong> (confidence ${p.confidence}/100) · ${esc(p.ruleVersion)} · ${esc(p.generatedAt)}</p>
-<p class="note"><strong>Logic analysis unavailable.</strong> Based on Orchestrator operational data only, not the package's workflow logic.</p>
+<p class="note"><strong>${p.logicAnalysis === "available" ? "Package analysed." : p.logicAnalysis === "partial" ? "Logic analysis partial." : "Logic analysis unavailable."}</strong> ${p.logicAnalysis === "available" ? "Workflow structure comes from static analysis of the deployed package; runtime behaviour and business context were not observed." : "Based on Orchestrator operational data" + (p.logicAnalysis === "partial" ? " and a partly analysed package." : ", not the package's workflow logic.")}</p>
 ${narrative ? `<section><h2>Summary (draft)</h2><p class="draft">${esc(AI_DRAFT_NOTICE)}</p><p>${esc(narrative)}</p></section>` : ""}
 ${sec("Target pattern", `<p><strong>${esc(p.targetPattern.name)}.</strong> ${esc(p.targetPattern.description)}</p>`)}
 ${sec("Retained RPA elements", ul(p.retainedRpaElements))}${sec("Candidate integrations / tools", ul(p.candidateIntegrations.map((i) => `${i.name} (${i.kind}): ${i.basis}`)))}

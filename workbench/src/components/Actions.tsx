@@ -69,3 +69,27 @@ export function FolderPicker({ connectorId, folders, selected }: { connectorId: 
     </fieldset>
   );
 }
+
+export function PackageSettingsForm({ connectorId, initial }: { connectorId: string; initial: { enabled: boolean; permissionConfirmed: boolean; retainRaw: boolean } }) {
+  const router = useRouter();
+  const [v, setV] = useState(initial);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string }>();
+  return (
+    <form onSubmit={async (e) => {
+      e.preventDefault(); setMsg(undefined);
+      const res = await fetch(`/api/connectors/${connectorId}/package-settings`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(v) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg({ ok: false, text: data.issues ? data.issues.map((i: any) => i.message).join("; ") : data.error ?? "Could not save" }); return; }
+      setMsg({ ok: true, text: "Saved" }); router.refresh();
+    }}>
+      <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+        <legend className="field-label" style={{ marginBottom: 6 }}>Package analysis (opt-in, off by default)</legend>
+        <label className="chk"><input type="checkbox" checked={v.permissionConfirmed} onChange={(e) => setV({ ...v, permissionConfirmed: e.target.checked, enabled: e.target.checked ? v.enabled : false })} /> I confirm this connection&apos;s token holds the <b>Packages.View</b> permission</label>
+        <label className="chk"><input type="checkbox" checked={v.enabled} disabled={!v.permissionConfirmed} onChange={(e) => setV({ ...v, enabled: e.target.checked })} /> Download the exact deployed package version and analyse it statically (read-only)</label>
+        <label className="chk"><input type="checkbox" checked={v.retainRaw} disabled={!v.enabled} onChange={(e) => setV({ ...v, retainRaw: e.target.checked })} /> Also retain the raw .nupkg, encrypted at rest (separate from analysis; turning it off deletes retained packages)</label>
+      </fieldset>
+      <button className="btn secondary sm" type="submit" style={{ marginTop: 8 }}>Save package settings</button>
+      <span role="status" aria-live="polite" className={msg ? `badge ${msg.ok ? "sage" : "red"}` : undefined} style={{ marginLeft: 8 }}>{msg?.text}</span>
+    </form>
+  );
+}

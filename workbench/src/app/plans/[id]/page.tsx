@@ -27,7 +27,7 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
         meta={<><StatusBadge tone="blue">{c.recommendationLabel}</StatusBadge><span>Confidence {c.confidence}/100</span><span>{c.ruleVersion}</span><span>Generated {dt(new Date(c.generatedAt))}</span><StatusBadge tone="neutral">Draft for review</StatusBadge></>}
         actions={<><a className="btn secondary" href={`/api/plans/${plan.id}/export?format=md`}><Download size={16} aria-hidden />Markdown</a><a className="btn secondary" href={`/api/plans/${plan.id}/export?format=html`}><FileCode2 size={16} aria-hidden />HTML</a></>} />
       <div className="stack-l">
-        <CoverageNotice />
+        <CoverageNotice level={c.logicAnalysis} note={c.unknowns[0]} />
         {plan.narrative && <section className="panel panel-pad"><h2 className="panel-title">Summary (draft)</h2><p className="draft">{AI_DRAFT_NOTICE}</p><p style={{ marginBottom: 0 }}>{plan.narrative}</p></section>}
         <div className="cols-2">
           <section className="panel panel-pad"><h2 className="panel-title">Target pattern</h2><p style={{ marginTop: 0 }}><b>{c.targetPattern.name}.</b> {c.targetPattern.description}</p><h3 className="panel-title" style={{ fontSize: 13.5 }}>Retained RPA elements</h3><L xs={c.retainedRpaElements} /></section>

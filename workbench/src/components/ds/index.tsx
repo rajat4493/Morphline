@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type { Recommendation } from "@/assessment/types";
 import { Mark, MobileNav, ReadOnlyStatus, SidebarNav } from "./client";
 import { CATEGORY_INFO, type ExceptionCategory } from "@/ai/taxonomy";
-import { REC_META, SOURCE_LABEL, strengthOf } from "./meta";
+import { BASIS_META, REC_META, SOURCE_LABEL, strengthOf, type BasisKey } from "./meta";
 
 export { REC_META } from "./meta";
 export { Tabs, CopyLink, RevealName } from "./client";
@@ -49,6 +49,11 @@ export function RecBadge({ rec, lg }: { rec: string; lg?: boolean }) {
   return <StatusBadge tone={m.tone} lg={lg} icon={<I size={lg ? 15 : 13} aria-hidden />}>{m.label}</StatusBadge>;
 }
 
+export function BasisBadge({ basis }: { basis: string }) {
+  const m = BASIS_META[basis as BasisKey];
+  return m ? <span title={m.help}><StatusBadge tone={m.tone}>{m.short}</StatusBadge></span> : <StatusBadge>{basis}</StatusBadge>;
+}
+
 export function InfoTip({ id, label, children, below, right }: { id: string; label: string; children: ReactNode; below?: boolean; right?: boolean }) {
   return <span className={`tip${below ? " below" : ""}${right ? " right" : ""}`}><button type="button" className="tip-btn" aria-label={`About ${label}`} aria-describedby={id}><CircleHelp size={15} aria-hidden /></button><span role="tooltip" id={id} className="tip-body">{children}</span></span>;
 }
@@ -76,7 +81,7 @@ export function Health({ color, label }: { rate?: number; jobs?: number; color: 
 }
 
 /* ---------- Decision panel ---------- */
-export function DecisionPanel(p: { rec: string; confidence: number; opportunity: number; risk: number; evidenceCount: number; conclusion: string; runnerUp?: string | null; redesign?: boolean; aiInferred?: boolean }) {
+export function DecisionPanel(p: { rec: string; confidence: number; opportunity: number; risk: number; evidenceCount: number; conclusion: string; runnerUp?: string | null; redesign?: boolean; aiInferred?: boolean; packageChip?: { label: string; tone: "sage" | "amber" | "outline" }; governedGated?: boolean }) {
   const m = REC_META[p.rec as Recommendation];
   const I = m.icon;
   return (
@@ -88,6 +93,8 @@ export function DecisionPanel(p: { rec: string; confidence: number; opportunity:
         <p className="decision-line">{p.conclusion}</p>
         <div className="decision-sub">
           {p.redesign && <StatusBadge tone="amber" icon={<AlertTriangle size={13} aria-hidden />}>Redesign review first</StatusBadge>}
+          {p.packageChip && <StatusBadge tone={p.packageChip.tone}>{p.packageChip.label}</StatusBadge>}
+          {p.governedGated && <StatusBadge tone="amber">Agentic option blocked: needs package analysis</StatusBadge>}
           {p.aiInferred && <StatusBadge tone="amber">Includes AI-inferred evidence</StatusBadge>}
           {p.runnerUp && <span>Runner-up: <RecBadge rec={p.runnerUp} /></span>}
           <a href="#tab-assessment">View rationale</a>
@@ -135,12 +142,14 @@ export function RiskPanel({ title, icon, children }: { title: string; icon: Reac
   return <section className="panel riskpanel"><h3>{icon}{title}</h3>{children}</section>;
 }
 
-export function CoverageNotice({ children }: { children?: ReactNode }) {
+export function CoverageNotice({ children, level = "unavailable", note }: { children?: ReactNode; level?: "unavailable" | "partial" | "available"; note?: string }) {
+  const title = level === "available" ? "Package analysed: runtime behaviour and business context are still unknown" : level === "partial" ? "Coverage: the package was only partly analysed" : "Coverage limitation: workflow package analysis would improve recommendation confidence";
   return (
-    <details className="coverage">
-      <summary><Info size={17} aria-hidden /><span>Coverage limitation: workflow package analysis would improve recommendation confidence</span><ChevronDown className="chev" size={16} aria-hidden /></summary>
+    <details className={`coverage${level === "available" ? " ok" : ""}`}>
+      <summary><Info size={17} aria-hidden /><span>{title}</span><ChevronDown className="chev" size={16} aria-hidden /></summary>
       <div className="body">
-        <p>Orchestrator APIs describe how a process runs (volume, failures, triggers, queues), not what its workflow does. Decision logic, selectors and the assets a package actually uses are not visible, so confidence is capped at 85.</p>
+        <p>{note ?? "Orchestrator APIs describe how a process runs (volume, failures, triggers, queues), not what its workflow does."}</p>
+        {level !== "available" && <p>Without trusted package analysis, confidence is capped at 85 and policy-constrained agentic is not eligible.</p>}
         {children}
       </div>
     </details>

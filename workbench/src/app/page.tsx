@@ -7,7 +7,7 @@ import { pretty, folderCrumb } from "@/components/ds/meta";
 import { dt } from "@/lib/fmt";
 import { applyFilters, parseFilters } from "@/lib/filters";
 import { getContext } from "@/lib/server";
-import { inventory, recentImports } from "@/services/queries";
+import { inventory, packageCoverageSummary, recentImports } from "@/services/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,7 @@ export default async function Overview({ searchParams }: { searchParams: Record<
   const f = parseFilters(searchParams);
   const rows = applyFilters(all, f);
   const imports = await recentImports(db, ctx);
+  const pkg = await packageCoverageSummary(db, ctx);
   const folders = [...new Map(all.map((r) => [r.folderId, r.folder])).entries()];
   const counts = Object.fromEntries(RECOMMENDATIONS.map((r) => [r, rows.filter((x) => x.recommendation === r).length]));
   const max = Math.max(1, ...Object.values(counts));
@@ -41,6 +42,7 @@ export default async function Overview({ searchParams }: { searchParams: Record<
         <div className="panel kpi"><Metric label={rows.length === all.length ? "Processes" : `Processes (of ${all.length})`} value={rows.length} /></div>
         <div className="panel kpi"><Metric label="Redesign review" value={rows.filter((r) => r.redesign).length} sub="Stabilise before migrating" /></div>
         <div className="panel kpi"><Metric label="Retire / consolidate" value={rows.filter((r) => r.recommendation === "retire").length} sub="Candidates to confirm" /></div>
+        <div className="panel kpi"><Metric label="Packages analysed" value={`${pkg.trusted} of ${pkg.total}`} sub={pkg.attempted === 0 ? "Opt-in, off" : `${pkg.attempted} attempted · trusted = 80%+ source parsed`} tipId="tip-pkg" tip="Processes whose deployed package was analysed from readable source (at least 80% of workflow files parsed). Trusted analysis raises the confidence cap to 90 and makes policy-constrained agentic eligible." /></div>
         <div className="panel kpi"><Metric label="Average confidence" value={rows.length ? Math.round(rows.reduce((a, r) => a + r.confidence, 0) / rows.length) : 0} sub="Capped at 85 without package analysis" tipRight tipId="tip-avg" tip="Mean confidence across the filtered processes. Package analysis is not available yet, so no result can exceed 85." /></div>
       </section>
 

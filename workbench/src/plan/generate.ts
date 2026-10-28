@@ -3,7 +3,7 @@ import { RECOMMENDATION_LABEL } from "@/assessment/types";
 
 export type PlanInput = {
   assessmentId: string; ruleVersion: string; recommendation: Recommendation; runnerUp: string | null; confidence: number; redesignReview: boolean;
-  riskFlags: string[]; missingInformation: string[]; evidence: { ruleId: string; signal: string; observed: string; effect: string; sourceRefs: string[]; provenance?: string }[];
+  riskFlags: string[]; missingInformation: string[]; logicAnalysis?: "unavailable" | "partial" | "available"; evidence: { ruleId: string; signal: string; observed: string; effect: string; sourceRefs: string[]; provenance?: string }[];
 };
 export type PlanContent = {
   schema: 1; processName: string; folderPath: string; generatedAt: string; assessmentId: string; ruleVersion: string; recommendation: Recommendation; recommendationLabel: string; confidence: number;
@@ -11,7 +11,7 @@ export type PlanContent = {
   retainedRpaElements: string[]; candidateIntegrations: { name: string; kind: string; basis: string }[];
   policies: string[]; identityAndRbac: string[]; approvalPoints: string[]; validationCriteria: string[];
   backlog: { phase: string; goal: string; items: string[] }[]; assumptions: string[]; unknowns: string[];
-  evidence: { signal: string; observed: string; ruleId: string; refs: string[]; provenance?: string }[]; riskFlags: string[]; logicAnalysis: "unavailable";
+  evidence: { signal: string; observed: string; ruleId: string; refs: string[]; provenance?: string }[]; riskFlags: string[]; logicAnalysis: "unavailable" | "partial" | "available";
 };
 
 const PATTERN: Record<Recommendation, { name: string; description: string }> = {
@@ -78,7 +78,7 @@ export function generatePlan(facts: ProcessFacts, a: PlanInput, now = new Date()
   return {
     schema: 1, processName: facts.name, folderPath: facts.folderPath, generatedAt: now.toISOString(), assessmentId: a.assessmentId, ruleVersion: a.ruleVersion, recommendation: rec, recommendationLabel: RECOMMENDATION_LABEL[rec], confidence: a.confidence,
     targetPattern: PATTERN[rec], retainedRpaElements: retained, candidateIntegrations: integrations, policies, identityAndRbac: identity, approvalPoints: approvals, validationCriteria: validation, backlog,
-    assumptions: ["Imported Orchestrator telemetry (last 90 days) is representative of normal operation.", "The package's internal logic has NOT been analysed; decision points and integrations are inferred only from operational signals.", ...(a.runnerUp ? [`Runner-up recommendation by rule score: ${a.runnerUp}.`] : [])],
-    unknowns: a.missingInformation, evidence: ev, riskFlags: a.riskFlags, logicAnalysis: "unavailable",
+    assumptions: ["Imported Orchestrator telemetry (last 90 days) is representative of normal operation.", a.logicAnalysis === "available" ? `The package (v${facts.package?.analyzedVersion}) was analysed statically: workflow structure, selectors and references come from its source. Runtime behaviour, data content and business context were not observed.` : a.logicAnalysis === "partial" ? "The package was only partly analysed; unparsed workflows are unknown." : "The package's internal logic has NOT been analysed; decision points and integrations are inferred only from operational signals.", ...(a.runnerUp ? [`Runner-up recommendation by rule score: ${a.runnerUp}.`] : [])],
+    unknowns: a.missingInformation, evidence: ev, riskFlags: a.riskFlags, logicAnalysis: a.logicAnalysis ?? "unavailable",
   };
 }

@@ -1,10 +1,12 @@
-import { Download, FileText, GitCommitHorizontal, Inbox, ListChecks, Network, ShieldCheck, Activity, Package } from "lucide-react";
+import { Download, FileText, Package as PackageIcon, GitCommitHorizontal, Inbox, ListChecks, Network, ShieldCheck, Activity, Package } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { ActionButton } from "@/components/Actions";
 import { CopyLink, DecisionPanel, EmptyState, PageHeader, REC_META, StatusBadge, Tabs } from "@/components/ds";
 import { folderCrumb, pretty } from "@/components/ds/meta";
 import { AssessmentTab, DependenciesTab, EvidenceTab, OperationsTab, PlanTab } from "@/components/process/sections";
+import { PackageTab } from "@/components/process/package-tab";
+import { PACKAGE_FAILURE, PACKAGE_STATUS } from "@/components/ds/meta";
 import { getContext } from "@/lib/server";
 import { processDetail } from "@/services/queries";
 
@@ -19,6 +21,8 @@ export default async function ProcessPage({ params }: { params: { id: string } }
   const top = [...d.evidence].filter((e) => e.ruleId !== "R03-baseline" && e.weight >= 1).sort((x, y) => y.weight - x.weight).slice(0, 2).map((e) => e.signal.toLowerCase());
   const conclusion = a ? `${REC_META[a.recommendation as keyof typeof REC_META].sentence} ${top.length ? `Strongest signals: ${top.join(" and ")}.` : "No strong signal was found, so this is a weak default."}` : "";
 
+  const pa = d.packageAnalysis;
+  const packageChip = !pa ? { label: "Package not analysed", tone: "outline" as const } : pa.failure ? { label: PACKAGE_FAILURE[pa.failure] ?? "Package analysis failed", tone: "amber" as const } : pa.sourceStatus === "source_available" ? { label: `Package analysed · ${Math.round(pa.coverage * 100)}% parsed`, tone: pa.coverage >= 0.8 ? "sage" as const : "amber" as const } : { label: `Package: ${PACKAGE_STATUS[pa.sourceStatus]?.label.toLowerCase()}`, tone: "amber" as const };
   return (
     <>
       <PageHeader
@@ -32,12 +36,13 @@ export default async function ProcessPage({ params }: { params: { id: string } }
         </>}
       />
       {!a ? <EmptyState icon={<ListChecks size={22} />} title="No assessment yet">Run an import from Connectors &amp; imports to assess this process.</EmptyState> : <>
-        <DecisionPanel rec={a.recommendation} confidence={a.confidence} opportunity={a.opportunityScore} risk={a.riskScore} evidenceCount={d.evidence.length} conclusion={conclusion} runnerUp={a.runnerUp} redesign={a.redesignReview} aiInferred={d.evidence.some((e) => e.provenance === "ai_inferred")} />
+        <DecisionPanel rec={a.recommendation} confidence={a.confidence} opportunity={a.opportunityScore} risk={a.riskScore} evidenceCount={d.evidence.length} conclusion={conclusion} runnerUp={a.runnerUp} redesign={a.redesignReview} aiInferred={d.evidence.some((e) => e.provenance === "ai_inferred")} packageChip={packageChip} governedGated={!!a.eligibility?.governed_agentic && a.eligibility.governed_agentic.eligible === false && a.scores.governed_agentic > 0} />
         <Tabs tabs={[
           { id: "assessment", label: "Assessment", icon: <ShieldCheck size={16} aria-hidden />, panel: <AssessmentTab d={d} /> },
           { id: "evidence", label: "Evidence", count: d.evidence.length, icon: <FileText size={16} aria-hidden />, panel: <EvidenceTab d={d} /> },
           { id: "operations", label: "Operations", icon: <Activity size={16} aria-hidden />, panel: <OperationsTab d={d} /> },
           { id: "dependencies", label: "Dependencies", icon: <Network size={16} aria-hidden />, panel: <DependenciesTab d={d} /> },
+          { id: "package", label: "Package", icon: <PackageIcon size={16} aria-hidden />, panel: <PackageTab d={d} /> },
           { id: "plan", label: "Migration plan", count: d.plans.length || undefined, icon: <GitCommitHorizontal size={16} aria-hidden />, panel: <PlanTab d={d} /> },
         ]} />
       </>}

@@ -2,8 +2,8 @@ import { Activity, AlertTriangle, Boxes, CalendarClock, CheckCircle2, CircleDot,
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ActionButton } from "@/components/Actions";
-import { CoverageNotice, EmptyState, EvidenceItem, Metric, RevealName, RiskPanel, StatusBadge } from "@/components/ds";
-import { SOURCE_LABEL, strengthOf } from "@/components/ds/meta";
+import { BasisBadge, CoverageNotice, EmptyState, EvidenceItem, Metric, RevealName, RiskPanel, StatusBadge } from "@/components/ds";
+import { BASIS_META, SOURCE_LABEL, strengthOf, type BasisKey } from "@/components/ds/meta";
 import { CATEGORY_INFO, type ExceptionCategory } from "@/ai/taxonomy";
 import { redact } from "@/ai/redact";
 import { day, dt } from "@/lib/fmt";
@@ -21,10 +21,11 @@ const HIGH_FLAGS = new Set(["HIGH_FAILURE_RATE", "VOLATILE_UI"]);
 export function AssessmentTab({ d }: { d: Detail }) {
   const a = d.assessment!;
   const drivers = [...d.evidence].filter((e) => e.ruleId !== "R03-baseline" && e.weight >= 1).sort((x, y) => y.weight - x.weight).slice(0, 3);
-  const gaps = a.missingInformation.slice(1); // first entry is the coverage limitation, shown in the callout
+  const gaps = a.missingInformation.slice(1); // first entry is the coverage statement, shown in the notice above
   return (
     <div className="stack-l">
-      <CoverageNotice><p className="muted" style={{ color: "#5c3a0c" }}>Next step: upload the project package/XAML (planned) to analyse decision points, selectors and integrations.</p></CoverageNotice>
+      <CoverageNotice level={a.logicAnalysis as "unavailable" | "partial" | "available"} note={a.missingInformation[0]} />
+      {Object.values(a.eligibility ?? {}).some((e) => !e.eligible) && a.scores.governed_agentic > 0 && !a.eligibility.governed_agentic.eligible && <article className="insight"><span className="insight-ico" style={{ background: "var(--amber-soft)", color: "var(--amber)" }}><ShieldAlert size={18} aria-hidden /></span><div><h4>Policy-constrained agentic is not eligible yet</h4><p>The imported data supports it with a score of {a.scores.governed_agentic}, but it is excluded from the recommendation. {a.eligibility.governed_agentic.reasons.join(" ")}</p><span className="src">Eligibility gate · requires package analysis with at least 80% of workflow files parsed</span></div></article>}
       <div className="cols">
         <section aria-labelledby="why-h" className="stack">
           <h2 className="panel-title" id="why-h" style={{ marginBottom: 0 }}>Why this recommendation</h2>
@@ -129,27 +130,40 @@ export function OperationsTab({ d }: { d: Detail }) {
 
 /* ---------------- Dependencies ---------------- */
 const CRED = new Set(["credential", "secret", "windowscredential"]);
+const KIND_ICON: Record<string, ReactNode> = { queue: <Inbox size={18} aria-hidden />, process: <Boxes size={18} aria-hidden />, asset: <KeyRound size={18} aria-hidden />, config: <CircleDot size={18} aria-hidden />, trigger: <CalendarClock size={18} aria-hidden /> };
 export function DependenciesTab({ d }: { d: Detail }) {
-  const queues = d.dependencies.filter((x) => x.kind === "queue");
-  const shared = d.dependencies.filter((x) => x.origin === "shared_package");
+  const types = new Map(d.assets.map((a) => [a.name.toLowerCase(), a.valueType]));
+  const pkgDeps = d.dependencies.filter((x) => x.kind === "package");
+  const rows = d.dependencies.filter((x) => x.kind !== "package");
+  const triggerRows = d.triggers.map((t) => ({ id: "t" + t.id, kind: "trigger", name: t.kind === "time" ? `Schedule ${t.cron}` : `Queue trigger: ${t.queueName}`, detail: `${t.enabled ? "Enabled" : "Disabled"} trigger configured in Orchestrator`, basis: "confirmed_orchestrator" }));
+  const all = [...rows.map((x) => ({ id: x.id, kind: x.kind, name: x.name, detail: x.detail ?? "", basis: x.basis })), ...triggerRows];
+  const pa = d.packageAnalysis;
+  const emptyNote: Record<BasisKey, string> = {
+    confirmed_package: !pa ? "Package not analysed: no package-level dependency can be confirmed." : pa.sourceStatus !== "source_available" ? "No readable source in the package, so no package-level dependency can be confirmed." : "No literal references found in the package.",
+    confirmed_orchestrator: "None configured.", inferred: "None.", folder_scoped: "No assets in this folder.",
+  };
   return (
     <div className="stack-l">
-      <p className="muted" style={{ margin: 0 }}>Relationships visible from Orchestrator data. <b>Confirmed</b> links come from triggers, queues or shared packages. <b>Unconfirmed</b> items are folder-scoped metadata: the API does not say whether this process uses them.</p>
+      <p className="muted" style={{ margin: 0 }}>Every relationship carries the evidence it rests on. Only the first two groups are confirmed. Folder-scoped items merely exist in the folder, and inferred items are derived or resolved at runtime.</p>
       <div className="dep-graph">
         <div className="dep-col"><div className="dep-node root"><span className="dep-ico"><Workflow size={18} aria-hidden /></span><div><b>{d.p.name.replace(/_/g, " ")}</b><span className="muted">{d.f.path}</span></div></div></div>
         <div className="dep-link" aria-hidden><svg width="48" height="24" viewBox="0 0 48 24"><path d="M0 12h42m-8-7 8 7-8 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
         <div className="dep-col">
-          <h3 className="eyebrow"><ShieldCheck size={14} aria-hidden />Confirmed from API data</h3>
-          {d.triggers.map((t) => <div className="dep-node" key={t.id}><span className="dep-ico"><CalendarClock size={18} aria-hidden /></span><div><b>{t.kind === "time" ? `Schedule ${t.cron}` : `Queue trigger: ${t.queueName}`}</b><span className="muted">{t.enabled ? "Enabled" : "Disabled"} trigger</span></div></div>)}
-          {queues.map((q) => <div className="dep-node" key={q.id}><span className="dep-ico"><Inbox size={18} aria-hidden /></span><div><b>Queue {q.name}</b><span className="muted">{q.detail}</span></div></div>)}
-          {shared.map((s) => <div className="dep-node" key={s.id}><span className="dep-ico"><Boxes size={18} aria-hidden /></span><div><b>{s.name.replace(/_/g, " ")}</b><span className="muted">{s.detail} (duplicate deployment)</span></div></div>)}
-          {d.triggers.length + queues.length + shared.length === 0 && <p className="muted" style={{ margin: 0 }}>No confirmed dependencies found.</p>}
-          <h3 className="eyebrow" style={{ marginTop: 8 }}><KeyRound size={14} aria-hidden />Folder-scoped metadata · association unconfirmed</h3>
-          {d.assets.length === 0 ? <p className="muted" style={{ margin: 0 }}>No assets in this folder.</p> : d.assets.map((a) => { const cred = CRED.has(a.valueType.toLowerCase()); return (
-            <div className="dep-node unconfirmed" key={a.id}><span className="dep-ico"><KeyRound size={18} aria-hidden /></span><div>{cred ? <RevealName name={a.name} /> : <b>{a.name}</b>}<span className="muted" style={{ display: "block" }}>{a.valueType}{a.valueScope ? ` · ${a.valueScope}` : ""} {cred && <StatusBadge tone="amber">Credential</StatusBadge>}</span></div></div>); })}
-          <p className="muted" style={{ fontSize: 12.5, margin: 0 }}>Asset values are never retrieved or stored. Credential-type names are masked until revealed.</p>
+          {(["confirmed_package", "confirmed_orchestrator", "inferred", "folder_scoped"] as BasisKey[]).map((b) => {
+            const items = all.filter((x) => x.basis === b), m = BASIS_META[b];
+            return (
+              <section key={b} aria-labelledby={`dep-${b}`}><h3 className="eyebrow" id={`dep-${b}`} style={{ marginBottom: 8 }}>{b.startsWith("confirmed") ? <ShieldCheck size={14} aria-hidden /> : b === "inferred" ? <CircleDot size={14} aria-hidden /> : <KeyRound size={14} aria-hidden />}{m.label}</h3>
+                <p className="muted" style={{ margin: "0 0 8px", fontSize: 12.5 }}>{m.help}</p>
+                {items.length === 0 ? <p className="muted" style={{ margin: "0 0 4px", fontSize: 13 }}>{emptyNote[b]}</p> : <div className="dep-col" style={{ gap: 8 }}>{items.map((x) => {
+                  const cred = x.kind === "asset" && CRED.has((types.get(x.name.toLowerCase()) ?? "").toLowerCase());
+                  return <div className={`dep-node${b === "folder_scoped" ? " unconfirmed" : ""}`} key={x.id}><span className="dep-ico">{KIND_ICON[x.kind] ?? <CircleDot size={18} aria-hidden />}</span><div>{cred ? <RevealName name={x.name} /> : <b>{x.name}</b>}<span className="muted" style={{ display: "block" }}>{x.kind}{cred ? " · credential asset" : ""} · {x.detail}</span></div></div>;
+                })}</div>}
+              </section>);
+          })}
+          <p className="muted" style={{ fontSize: 12.5, margin: 0 }}>Asset values are never retrieved or stored. Credential-type asset names are masked until revealed.</p>
         </div>
       </div>
+      {pkgDeps.length > 0 && <details className="meta"><summary>Package dependencies from project.json ({pkgDeps.length}) · <BasisBadge basis="confirmed_package" /></summary><div style={{ padding: "0 16px 14px" }}><ul className="gaps">{pkgDeps.map((x) => <li key={x.id}><span className="mono">{x.name}</span> <span className="muted">{x.detail?.replace("project.json dependency ", "")}</span></li>)}</ul></div></details>}
       <details className="meta"><summary>Package versions ({d.versions.length})</summary><div style={{ padding: "0 16px 14px" }}><ul className="gaps">{d.versions.map((v) => <li key={v.id}>{v.version} · published {day(v.publishedAt)}</li>)}</ul></div></details>
     </div>
   );

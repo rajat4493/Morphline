@@ -15,7 +15,7 @@ export async function createPlan(db: Db, ctx: TenantContext, processId: string, 
   if (!a) throw new Error("Process has no assessment yet; run an import first");
   const evidence = await db.select().from(s.assessmentEvidence).where(eq(s.assessmentEvidence.assessmentId, a.id));
   const facts = (await buildAllFacts(db, ctx, proc.connectorId)).find((f) => f.processId === processId)!;
-  const content = generatePlan(facts, { assessmentId: a.id, ruleVersion: a.ruleVersion, recommendation: a.recommendation as Recommendation, runnerUp: a.runnerUp, confidence: a.confidence, redesignReview: a.redesignReview, riskFlags: a.riskFlags, missingInformation: a.missingInformation, evidence });
+  const content = generatePlan(facts, { assessmentId: a.id, ruleVersion: a.ruleVersion, recommendation: a.recommendation as Recommendation, runnerUp: a.runnerUp, confidence: a.confidence, redesignReview: a.redesignReview, riskFlags: a.riskFlags, missingInformation: a.missingInformation, logicAnalysis: a.logicAnalysis as "unavailable" | "partial" | "available", evidence });
   let narrative: string | null = null;
   try { narrative = await narrator.draft(content); } catch { narrative = null; }
   const [row] = await db.insert(s.migrationPlans).values({ tenantId: ctx.tenantId, processId, assessmentId: a.id, content: content as object, narrative, narrativeIsAiDraft: narrative !== null }).returning();

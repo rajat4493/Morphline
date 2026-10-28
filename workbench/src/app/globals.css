@@ -286,3 +286,9 @@ details.meta dt{color:var(--text-3)}details.meta dd{margin:0;overflow-wrap:anywh
 }
 .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 .pcard dd{overflow-wrap:anywhere}
+
+.coverage.ok{border-color:#b8d3c1;background:var(--sage-soft);color:var(--sage)}.coverage.ok .body{color:#274a38}
+ul.tree{list-style:none;margin:6px 0 0;padding-left:18px;border-left:2px solid var(--border);display:flex;flex-direction:column;gap:8px}ul.tree.root{border-left:0;padding-left:0;margin:0}
+ul.tree li{font-size:13.5px}
+
+.list li>span{min-width:0;overflow-wrap:anywhere}.dt td.mono,.dt th{overflow-wrap:anywhere}.tablewrap:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
